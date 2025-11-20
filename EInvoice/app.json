@@ -12,6 +12,7 @@
   "logo": "PargesoftLogo.png",
   "dependencies": [],
   "screenshots": [],
+  "affixes": [ "PRG" ],
   "platform": "26.0.0.0",
   "application": "26.0.0.0",
   "supportedLocales": [ "en-US", "tr-TR" ],
