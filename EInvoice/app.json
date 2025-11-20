@@ -1,0 +1,34 @@
+{
+  "id": "15e883f5-6d65-488f-910e-3410dee79a6d",
+  "name": "E-Invoice/E-Archive",
+  "publisher": "Parge Yazilim Danismanlik Tic.A.S.",
+  "version": "25.6.0.2",
+  "brief": "E-Invoice/E-Archive",
+  "description": "E-Invoice/E-Archive",
+  "privacyStatement": "https://apps.pargesoft.com.tr/privacy-policy/",
+  "EULA": "https://apps.pargesoft.com.tr/eul",
+  "help": "https://pargesoft.microsoftcrmportals.com",
+  "url": "https://www.pargesoft.com",
+  "logo": "PargesoftLogo.png",
+  "dependencies": [],
+  "screenshots": [],
+  "platform": "26.0.0.0",
+  "application": "26.0.0.0",
+  "supportedLocales": [ "en-US", "tr-TR" ],
+  "idRanges": [
+    {
+      "from": 70093471,
+      "to": 70093550
+    }
+  ],
+  "contextSensitiveHelpUrl": "https://pargesoft.microsoftcrmportals.com",
+  "resourceExposurePolicy": {
+    "allowDebugging": false,
+    "allowDownloadingSource": false,
+    "includeSourceInSymbolFile": false
+  },
+  "runtime": "15.0",
+  "features": [
+    "TranslationFile"
+  ]
+}

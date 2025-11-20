@@ -1,0 +1,8 @@
+{
+    "CRS.FileNamePattern": "<ObjectTypeShortPascalCase> <ObjectId> - <ObjectNameShort>.al",
+    "CRS.FileNamePatternExtensions": "<ObjectTypeShortPascalCase> <ObjectId> - <ObjectNameShort>.al",
+    "CRS.FileNamePatternPageCustomizations": "<ObjectTypeShortPascalCase> <ObjectId> - <ObjectNameShort>.al",
+    "al.enableCodeAnalysis":false,
+    "al.codeAnalyzers": ["${AppSourceCop}"],
+    "al.ruleSetPath": "./.vscode/pargesoft.ruleset.json",
+}
