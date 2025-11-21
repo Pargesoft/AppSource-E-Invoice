@@ -1,8 +1,6 @@
 {
     "name": "E-Invoice/E-Archive",
     "publisher": "Parge Yazilim Danismanlik Tic.A.S.",
-    "version": "25.5.3.0",
     "mandatoryAffixes": [ "PRG" ],
-    "baselinePackageCachePath": "./.alpackages/baseline",
     "supportedCountries": [ "TR", "US"]
 }
