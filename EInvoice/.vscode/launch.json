@@ -1,0 +1,58 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Localization Sandbox",
+            "request": "launch",
+            "type": "al",
+            "environmentType": "Sandbox",
+            "environmentName": "LocalizationSandbox",
+            "breakOnError": true,
+            "launchBrowser": true,
+            "enableLongRunningSqlStatements": true,
+            "enableSqlInformationDebugger": true,
+            "tenant": "efc338e1-fedb-4ef5-abc9-455ce95bf2b9",
+            "schemaUpdateMode": "ForceSync"
+        },
+        {
+            "name": "Umut Sandbox",
+            "request": "launch",
+            "type": "al",
+            "environmentType": "Sandbox",
+            "environmentName": "Umut_UatSandbox",
+            "breakOnError": true,
+            "launchBrowser": true,
+            "enableLongRunningSqlStatements": true,
+            "enableSqlInformationDebugger": true,
+            "tenant": "cab9a3c2-bf88-421c-86b1-4e980c0e8884",
+            "schemaUpdateMode": "ForceSync",
+            "startupCompany": "TEST_UMUT_061025"
+        },
+        {
+            "name": "Karinca Sandbox",
+            "request": "launch",
+            "type": "al",
+            "environmentType": "Sandbox",
+            "environmentName": "KARINCA_UATSandboxNew",
+            "breakOnError": true,
+            "launchBrowser": true,
+            "enableLongRunningSqlStatements": true,
+            "enableSqlInformationDebugger": true,
+            "tenant": "9be28464-1e95-4ad3-80c3-7c9528d56873",
+            "schemaUpdateMode": "ForceSync"
+        },
+        {
+            "name": "Normod Sandbox",
+            "request": "launch",
+            "type": "al",
+            "environmentType": "Sandbox",
+            "environmentName": "Normod_DevSandbox",
+            "breakOnError": true,
+            "launchBrowser": true,
+            "enableLongRunningSqlStatements": true,
+            "enableSqlInformationDebugger": true,
+            "tenant": "1f0f12eb-9fca-40e1-bdb5-3a3e623fce3b",
+            "schemaUpdateMode": "ForceSync"
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "name": "AA0215",
+    "rules": [
+        {                    
+            "id": "AA0218",
+            "action": "None",
+            "justification": "You must write a tooltip in the Tooltip property for all controls of type Action and Field that exist on page objects."
+        },
+        {
+            "id": "AS0092",
+            "action": "None",
+            "justification": "The app.json file must specify an Azure Application Insights resource for monitoring operations related to this extension."
+        }
+         
+    ]
+}

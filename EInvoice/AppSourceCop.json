@@ -1,0 +1,6 @@
+{
+    "name": "E-Invoice/E-Archive",
+    "publisher": "Parge Yazilim Danismanlik Tic.A.S.",
+    "mandatoryAffixes": [ "PRG" ],
+    "supportedCountries": [ "TR", "US"]
+}

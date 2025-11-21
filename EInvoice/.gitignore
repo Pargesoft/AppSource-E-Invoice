@@ -1,0 +1,5 @@
+.alcache/
+.snapshots/
+.altemplates/
+rad.json
+*.DS_Store
