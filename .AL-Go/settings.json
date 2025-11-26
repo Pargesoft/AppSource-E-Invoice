@@ -4,8 +4,13 @@
   "appSourceCopMandatoryAffixes": [
     "PRG"
   ],
-  "appFolders": ["EInvoice"],
-  "testFolders": ["EInvoice.Test"],
+  "appFolders": [
+    "EInvoice"
+  ],
+  "testFolders": [
+    "EInvoice.Test",
+    "pageScripting.Test"
+  ],
   "bcptTestFolders": [],
   "repoVersion": "3.0"
 }
