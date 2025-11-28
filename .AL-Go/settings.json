@@ -1,11 +1,18 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/AL-Go-Actions/v8.0/.Modules/settings.schema.json",
   "country": "us",
-  "appSourceCopMandatoryAffixes": [
-    "PRG"
-  ],
+  "appSourceCopMandatoryAffixes": ["PRG"],
+  "test" : true,
   "appFolders": ["EInvoice"],
   "testFolders": ["EInvoice.Test"],
   "bcptTestFolders": [],
-  "repoVersion": "3.0"
+  "pageScriptingTests": ["PageScripts/EInvoiceIntSetup.yml"],
+  "repoVersion": "3.0",
+  "environments": [
+     {
+        "type": "Sandbox",
+        "environmentName": "LocalizationSandbox",
+        "tenant": "pargesoft.com"
+    }
+  ]
 }
