@@ -1,12 +1,22 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/AL-Go-Actions/v8.0/.Modules/settings.schema.json",
   "country": "us",
-  "appSourceCopMandatoryAffixes": ["PRG"],
-  "test" : true,
-  "appFolders": ["EInvoice"],
-  "testFolders": ["EInvoice.Test"],
+  "appSourceCopMandatoryAffixes": [
+    "PRG"
+  ],
+  "test": true,
+  "appFolders": [
+    "EInvoice"
+  ],
+  "testFolders": [
+    "EInvoice.Test"
+  ],
   "bcptTestFolders": [],
-  "pageScriptingTests": ["PageScripts/EInvoiceIntSetup.yml"],
-  "repoVersion": "3.0",
-  "environments": ["LocalizationSandbox"]
+  "pageScriptingTests": [
+    "PageScripts/EInvoiceIntSetup.yml"
+  ],
+  "repoVersion": "3.1",
+  "environments": [
+    "LocalizationSandbox"
+  ]
 }
