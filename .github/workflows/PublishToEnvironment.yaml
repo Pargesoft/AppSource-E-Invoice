@@ -64,7 +64,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           shell: powershell
-          getEnvironments: ${{ github.event.inputs.environmentName }}
+          environmentName: ${{ github.event.inputs.environmentName }}
           type: 'Publish'
 
       - name: EnvName
