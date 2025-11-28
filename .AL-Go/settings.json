@@ -7,5 +7,12 @@
   "testFolders": ["EInvoice.Test"],
   "bcptTestFolders": [],
   "pageScriptingTests": ["PageScripts/EInvoiceIntSetup.yml"],
-  "repoVersion": "3.0"
+  "repoVersion": "3.0",
+  "environments": [
+     {
+        "type": "Sandbox",
+        "environmentName": "LocalizationSandbox",
+        "tenant": "pargesoft.com"
+    }
+  ]
 }

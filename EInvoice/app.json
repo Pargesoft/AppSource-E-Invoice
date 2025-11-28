@@ -33,5 +33,6 @@
   "runtime": "15.0",
   "features": [
     "TranslationFile"
-  ]
+  ],
+  "target": "Cloud"
 }
