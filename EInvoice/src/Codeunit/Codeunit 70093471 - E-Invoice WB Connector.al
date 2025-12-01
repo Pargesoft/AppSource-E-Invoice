@@ -9,7 +9,7 @@ codeunit 70093471 "PRG_E-Invoice WB Connector"
         Window: Dialog;
         Text001: Label 'Connection problem. Please check in with system administrator';
         Text002: Label 'Xml value cant be found';
-        Text005: Label '#1#################################\\';
+        Text005: Label '#1################################\\';
         Text006: Label 'Total Pages                #2######\', Comment = 'Counter';
         Text007: Label 'Current Page               #3######\', Comment = 'Counter';
         Text008: Label 'Time Counter               #4######\', Comment = 'Counter';
