@@ -19,3 +19,42 @@ rad.json
 .snapshots/
 cache_*
 ~$*
+#############################################
+# PLAYWRIGHT TEST  GITIGNORE
+#############################################
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Playwright Artifacts
+playwright-report/
+test-results/
+blob-report/
+trace.zip
+*.zip
+
+# State (Login Kullanıcı Kaydı)
+storageState.json
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Env dosyaları - Kesinlikle commit etme!
+.env
+.env.local
+.env.dev
+.env.qa
+.env.production
+
+# Cache
+.cache/
+*.cache
+playwright/.cache
+
+# Coverage (kullanmaya başlarsan)
+coverage/
+*.lcov
