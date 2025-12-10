@@ -1,0 +1,34 @@
+name: Playwright Hybrid Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  playwright-hybrid-tests:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Run HYBRID (API + UI) tests
+        env:
+          BC_BASE_URL: ${{ secrets.BC_BASE_URL }}
+          BC_USERNAME: ${{ secrets.BC_USERNAME }}
+          BC_PASSWORD: ${{ secrets.BC_PASSWORD }}
+          TOTP_SECRET: ${{ secrets.TOTP_SECRET }}
+          BC_COMPANY_ID: ${{ secrets.BC_COMPANY_ID }}
+          BC_TENANT_ID: ${{ secrets.BC_TENANT_ID }}
+          BC_CLIENT_ID: ${{ secrets.BC_CLIENT_ID }}
+          BC_CLIENT_SECRET: ${{ secrets.BC_CLIENT_SECRET }}
+        run: |
+          npx playwright test --project=chromium-tests --grep "@hybrid"
