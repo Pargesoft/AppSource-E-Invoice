@@ -8,16 +8,34 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js (with npm cache)
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (use npm ci when lockfile exists)
+        shell: pwsh
+        run: |
+          if (Test-Path package-lock.json) {
+            Write-Host "Found package-lock.json — running npm ci"
+            npm ci --no-audit --no-fund --prefer-offline
+          } else {
+            Write-Host "No package-lock.json — running npm install"
+            npm install --no-audit --no-fund
+            Write-Host ""
+            Write-Host "Recommendation: Commit package-lock.json for reproducible CI builds."
+            # Optional: fail the job to enforce lockfile policy
+            # Write-Error "package-lock.json is missing. Commit it to the repo to use 'npm ci'."
+            # exit 1
+          }
 
-      - name: Install Playwright Browsers
+      - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
       - name: Run UI tests
@@ -26,7 +44,7 @@ jobs:
           BC_USERNAME: ${{ secrets.BC_USERNAME }}
           BC_PASSWORD: ${{ secrets.BC_PASSWORD }}
           TOTP_SECRET: ${{ secrets.TOTP_SECRET }}
-          BC_COMPANY_ID: ${{ secrets.BC_COMPANY_ID }}          
+          BC_COMPANY_ID: ${{ secrets.BC_COMPANY_ID }}
         run: |
           npx playwright test --project=chromium-tests
 
@@ -36,6 +54,6 @@ jobs:
           BC_CLIENT_ID: ${{ secrets.BC_CLIENT_ID }}
           BC_CLIENT_SECRET: ${{ secrets.BC_CLIENT_SECRET }}
           BC_COMPANY_ID: ${{ secrets.BC_COMPANY_ID }}
-          BC_BASE_URL: ${{ secrets.BC_BASE_URL }}          
+          BC_BASE_URL: ${{ secrets.BC_BASE_URL }}
         run: |
           npx playwright test --project=api
