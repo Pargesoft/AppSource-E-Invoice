@@ -1,5 +1,4 @@
-// playwright.config.js (ESM)
-
+// PlaywrightTests/playwright.config.js (update)
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
@@ -8,32 +7,33 @@ export default defineConfig({
   // Global timeout (gerekirse)
   timeout: 120 * 1000,
 
+  // <-- add default artifact capture for CI
+  use: {
+    screenshot: 'only-on-failure',      // automatically save screenshots for failed tests
+    trace: 'retain-on-failure',         // saves traces for failed tests (useful with Playwright Trace Viewer)
+    video: 'retain-on-failure',         // saves video for failed tests
+  },
+
   projects: [
-    // 1) Sadece auth.setup.spec.js çalışsın (storageState üretmek için)
     {
       name: 'setup',
       testMatch: /auth\.setup\.spec\.js/,
+      // inherits default `use` above
     },
-
-    // 2) UI testleri: storageState.json ile çalışacaklar
     {
       name: 'chromium-tests',
       testMatch: /.*\.spec\.js/,
-      // auth.setup + API testleri bu projede koşmasın:
       testIgnore: [
         /auth\.setup\.spec\.js/,
         /api\/.*\.spec\.js/,
       ],
       use: {
         ...devices['Desktop Chrome'],
-        storageState: 'storageState.json', // ← BC login state buradan geliyor
+        storageState: 'storageState.json',
         headless: false,
       },
-      // Bu project, önce 'setup' projesini çalıştırır
       dependencies: ['setup'],
     },
-
-    // 3) API testleri: setup’a bağlı değil, storageState kullanmıyor
     {
       name: 'api',
       testMatch: /api\/.*\.spec\.js/,
