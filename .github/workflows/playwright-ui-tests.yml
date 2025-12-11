@@ -11,6 +11,7 @@ defaults:
 jobs:
   playwright-tests:
     runs-on: windows-latest
+    environment: LocalizationSandbox 
 
     steps:
       - name: Checkout repository
