@@ -39,6 +39,17 @@ export default class LoginPage extends BasePage {
     if (await this.verifyButton.isVisible().catch(() => false)) {
       console.log("✔ Verify button appeared after password — clicking it.");
       await this.verifyButton.click();
+
+      // Approve request butonunu ara
+      const approveButton = this.page.getByRole("button", { 
+        name: "Approve a request on my Microsoft Authenticator app" 
+      });
+
+      if (await approveButton.isVisible().catch(() => false)) {
+        console.log("✔ Approve request button appeared — clicking it.");
+        await approveButton.click();
+      }
+
     }
  
   }
