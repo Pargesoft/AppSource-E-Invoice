@@ -1,8 +1,8 @@
-// playwright.config.js
-// CommonJS stilinde config
-const { defineConfig, devices } = require('@playwright/test');
+// playwright.config.js (ESM)
 
-module.exports = defineConfig({
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
   testDir: './tests',
 
   // Global timeout (gerekirse)
@@ -27,18 +27,17 @@ module.exports = defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'storageState.json', // ← BC login state buradan geliyor
-        headless: false,                   // UI'ı görmek için
+        headless: false,
       },
-      // Bu project, önce 'setup' project’ini çalıştırır
+      // Bu project, önce 'setup' projesini çalıştırır
       dependencies: ['setup'],
     },
 
     // 3) API testleri: setup’a bağlı değil, storageState kullanmıyor
     {
       name: 'api',
-      testMatch: /api\/.*\.spec\.js/, // tests/api/... altındaki tüm *.spec.js
+      testMatch: /api\/.*\.spec\.js/,
       use: {
-        // browser açmasak da olur, ama request fixture’ı için project tanımlı
         baseURL: '',
         storageState: undefined,
       },

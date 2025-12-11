@@ -47,6 +47,7 @@ jobs:
           BC_PASSWORD: ${{ secrets.BC_PASSWORD }}
           TOTP_SECRET: ${{ secrets.TOTP_SECRET }}
           BC_COMPANY_ID: ${{ secrets.BC_COMPANY_ID }}
+          BC_ENVIRONMENT: ${{ secrets.BC_ENVIRONMENT }}
         run: |
           npx playwright test --project=chromium-tests
 
@@ -57,6 +58,8 @@ jobs:
           BC_CLIENT_SECRET: ${{ secrets.BC_CLIENT_SECRET }}
           BC_COMPANY_ID: ${{ secrets.BC_COMPANY_ID }}
           BC_BASE_URL: ${{ secrets.BC_BASE_URL }}
+          BC_ENVIRONMENT: ${{ secrets.BC_ENVIRONMENT }}
+          
         run: |
           npx playwright test --project=api
 
