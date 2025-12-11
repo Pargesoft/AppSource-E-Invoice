@@ -1,18 +1,19 @@
 {
   "name": "playwrighttests",
   "version": "1.0.0",
-  "description": "This template repository can be used for managing AppSource Apps for Business Central.",
+  "description": "Playwright UI + API test automation for Business Central",
   "main": "index.js",
   "private": true,
+
+  "type": "module",
+
   "scripts": {
     "test": "npx playwright test",
     "test:ui": "npx playwright test --project=chromium-tests",
     "test:api": "npx playwright test --project=api",
     "report": "npx playwright show-report"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+
   "dependencies": {
     "@azure/identity": "^4.5.0",
     "@types/node": "^22.10.1",
@@ -24,6 +25,7 @@
     "qs": "^6.13.1",
     "speakeasy": "^2.0.0"
   },
+
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@zerostep/playwright": "^0.1.5",
@@ -31,16 +33,19 @@
     "eslint": "^9.13.0",
     "prettier": "^3.3.3"
   },
+
   "directories": {
     "test": "tests"
   },
+
   "repository": {
     "type": "git",
-    "url": "git+https://KRYAYKN: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@github.com/Pargesoft/AppSource-E-Invoice.git"
+    "url": "git+https://github.com/Pargesoft/AppSource-E-Invoice.git"
   },
-  "type": "commonjs",
+
   "bugs": {
     "url": "https://github.com/Pargesoft/AppSource-E-Invoice/issues"
   },
+
   "homepage": "https://github.com/Pargesoft/AppSource-E-Invoice#readme"
 }

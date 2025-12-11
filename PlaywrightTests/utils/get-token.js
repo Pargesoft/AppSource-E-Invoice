@@ -1,26 +1,21 @@
-import dotenv from 'dotenv';
-dotenv.config();
+// utils/get-token.js
+import { BC_TENANT_ID, BC_CLIENT_ID, BC_CLIENT_SECRET } from "../tests/utils/env.js";
 
 export async function getAccessToken(request) {
-  const tenant = process.env.BC_TENANT_ID;
-  const clientId = process.env.BC_CLIENT_ID;
-  const clientSecret = process.env.BC_CLIENT_SECRET;
+  const url = `https://login.microsoftonline.com/${BC_TENANT_ID}/oauth2/v2.0/token`;
 
-  const tokenUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
-
-  const response = await request.post(tokenUrl, {
+  const response = await request.post(url, {
     form: {
-      grant_type: 'client_credentials',
-      client_id: clientId,
-      client_secret: clientSecret,
+      grant_type: "client_credentials",
+      client_id: BC_CLIENT_ID,
+      client_secret: BC_CLIENT_SECRET,
       scope: "https://api.businesscentral.dynamics.com/.default"
     }
   });
 
   if (!response.ok()) {
-    throw new Error(`Token alınamadı: ${response.status()}`);
+    throw new Error(`❌ Token alınamadı: ${response.status()}`);
   }
 
-  const data = await response.json();
-  return data.access_token;
+  return (await response.json()).access_token;
 }
