@@ -1,0 +1,76 @@
+name: Recording
+description: Test recording
+telemetryId: ad650a07-6063-4513-a4c8-330e898550e3
+start:
+  profile: BUSINESS MANAGER
+steps:
+  - type: navigate
+    target:
+      - page: PRG_E-Invoice Integrator Setup
+    description: Navigate to E-Fatura Entegrator Kurulumu
+  - type: page-shown
+    source:
+      page: PRG_E-Invoice Integrator Setup
+    modal: false
+    runtimeId: b2cm
+    description: Page <caption>E-Fatura Entegrator Kurulumu</caption> was shown.
+  - type: input
+    target:
+      - page: PRG_E-Invoice Integrator Setup
+        runtimeRef: b2cm
+      - field: E-Invoice Integrator
+    value: 5
+    description: Input <value>5</value> into <caption>E-Fatura Entegratör</caption>
+  - type: input
+    target:
+      - page: PRG_E-Invoice Integrator Setup
+        runtimeRef: b2cm
+      - field: E-Invoice Int. Auth. URL
+    value: https://efatura.uyumsoft.com.tr/Services/Integration?wsdl
+    description: Input
+      <value>https://efatura.uyumsoft.com.tr/Services/Integration?wsdl</value>
+      into <caption>E-Fatura İnt. Yetki URL</caption>
+  - type: input
+    target:
+      - page: PRG_E-Invoice Integrator Setup
+        runtimeRef: b2cm
+      - field: E-Invoice Integrator URL
+    value: https://efatura.uyumsoft.com.tr/Services/Integration?wsdl
+    description: Input
+      <value>https://efatura.uyumsoft.com.tr/Services/Integration?wsdl</value>
+      into <caption>E-Fatura Entegratör Adresi</caption>
+  - type: input
+    target:
+      - page: PRG_E-Invoice Integrator Setup
+        runtimeRef: b2cm
+      - field: E-Invoice Web Service UserName
+    value: Uyumsoft
+    description: Input <value>Uyumsoft</value> into <caption>E-Fatura Web Service
+      Kullanıcı Adı</caption>
+  - type: input
+    target:
+      - page: PRG_E-Invoice Integrator Setup
+        runtimeRef: b2cm
+      - field: E-Invoice Web Service Password
+    value: Uyumsoft
+    description: Input <value>Uyumsoft</value> into <caption>E-Fatura Web Servis
+      Şifresi</caption>
+  - type: validate
+    target:
+      - page: PRG_E-Invoice Integrator Setup
+        runtimeRef: b2fo
+      - field: E-Invoice Integrator
+    operation: =
+    value: 5
+    description: Doğrula <caption>E-Fatura Entegratör</caption>
+      <operation>eşittir</operation> <value>Uyumsoft</value>
+  - type: validate
+    target:
+      - page: PRG_E-Invoice Integrator Setup
+        runtimeRef: b2fo
+      - field: E-Invoice Int. Auth. URL
+    operation: =
+    value: https://efatura.uyumsoft.com.tr/Services/Integration?wsdl
+    description: Doğrula <caption>E-Fatura İnt. Yetki URL</caption>
+      <operation>eşittir</operation>
+      <value>https://efatura.uyumsoft.com.tr/Services/Integration?wsdl</value>

@@ -3,6 +3,11 @@ name: Playwright UI + API Tests (Manual)
 on:
   workflow_dispatch:
 
+# Tüm run step'leri için default çalışma klasörü:
+defaults:
+  run:
+    working-directory: PlaywrightTests
+
 jobs:
   playwright-tests:
     runs-on: windows-latest
@@ -18,8 +23,10 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          # workspace köküne göre path
+          cache-dependency-path: PlaywrightTests/package-lock.json
 
-      - name: Install dependencies (use npm ci when lockfile exists)
+      - name: Install dependencies (npm ci)
         shell: pwsh
         run: |
           if (Test-Path package-lock.json) {
@@ -28,11 +35,6 @@ jobs:
           } else {
             Write-Host "No package-lock.json — running npm install"
             npm install --no-audit --no-fund
-            Write-Host ""
-            Write-Host "Recommendation: Commit package-lock.json for reproducible CI builds."
-            # Optional: fail the job to enforce lockfile policy
-            # Write-Error "package-lock.json is missing. Commit it to the repo to use 'npm ci'."
-            # exit 1
           }
 
       - name: Install Playwright browsers
@@ -57,3 +59,14 @@ jobs:
           BC_BASE_URL: ${{ secrets.BC_BASE_URL }}
         run: |
           npx playwright test --project=api
+
+      # 🔽 Yeni step: Playwright HTML report'u artifact olarak yükle
+      - name: Upload Playwright HTML report
+        if: always()   # testler fail olsa bile rapor gelsin
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-html-report
+          # path, repo köküne göre; report klasörü PlaywrightTests altında
+          path: PlaywrightTests/playwright-report
+          if-no-files-found: warn
+          retention-days: 7
