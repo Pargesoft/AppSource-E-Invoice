@@ -3,7 +3,7 @@ name: Playwright UI + API Tests (Manual)
 on:
   workflow_dispatch:
 
-# Tüm run step'leri için default çalışma klasörü:
+
 defaults:
   run:
     working-directory: PlaywrightTests
@@ -52,7 +52,7 @@ jobs:
           BC_ENVIRONMENT: ${{ secrets.BC_ENVIRONMENT }}
         run: |
           npx playwright test --project=chromium-tests
-      # add this step after "Run UI tests" and after "Run API tests" (use always() so artifacts are uploaded even on failure)
+
       - name: Upload Playwright artifacts (report / test-results)
         if: always()
         uses: actions/upload-artifact@v4
@@ -76,13 +76,12 @@ jobs:
         run: |
           npx playwright test --project=api
 
-      # 🔽 Yeni step: Playwright HTML report'u artifact olarak yükle
+      
       - name: Upload Playwright HTML report
         if: always()   # testler fail olsa bile rapor gelsin
         uses: actions/upload-artifact@v4
         with:
           name: playwright-html-report
-          # path, repo köküne göre; report klasörü PlaywrightTests altında
           path: PlaywrightTests/playwright-report
           if-no-files-found: warn
           retention-days: 7
