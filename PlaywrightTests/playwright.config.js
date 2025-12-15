@@ -1,46 +1,42 @@
-// PlaywrightTests/playwright.config.js (update)
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-
-  // Global timeout (gerekirse)
   timeout: 120 * 1000,
 
-  // <-- add default artifact capture for CI
+  // HTML report’u her koşulda üret
+  reporter: [
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+    ['list'],
+  ],
+
+  // Fail olunca screenshot/trace/video zaten doğru
   use: {
-    screenshot: 'only-on-failure',      // automatically save screenshots for failed tests
-    trace: 'retain-on-failure',         // saves traces for failed tests (useful with Playwright Trace Viewer)
-    video: 'retain-on-failure',         // saves video for failed tests
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
+    video: 'retain-on-failure',
   },
 
   projects: [
     {
       name: 'setup',
       testMatch: /auth\.setup\.spec\.js/,
-      // inherits default `use` above
     },
     {
       name: 'chromium-tests',
       testMatch: /.*\.spec\.js/,
-      testIgnore: [
-        /auth\.setup\.spec\.js/,
-        /api\/.*\.spec\.js/,
-      ],
+      testIgnore: [/auth\.setup\.spec\.js/, /api\/.*\.spec\.js/],
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'storageState.json',
-        headless: false,
+        headless: true, // CI’de bunu true yapmanı öneririm
       },
       dependencies: ['setup'],
     },
     {
       name: 'api',
       testMatch: /api\/.*\.spec\.js/,
-      use: {
-        baseURL: '',
-        storageState: undefined,
-      },
+      use: { baseURL: '', storageState: undefined },
     },
   ],
 });

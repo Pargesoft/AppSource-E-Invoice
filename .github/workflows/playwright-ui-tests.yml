@@ -42,6 +42,7 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Run UI tests
+        working-directory: PlaywrightTests  
         env:
           BC_BASE_URL: ${{ secrets.BC_BASE_URL }}
           BC_USERNAME: ${{ secrets.BC_USERNAME }}
