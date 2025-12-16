@@ -22,6 +22,7 @@ export default class LoginPage extends BasePage {
 
     this.otpInput = page.getByPlaceholder("Code");
     this.verifyButton = page.getByRole("button", { name: "Verify" });
+    this.approveButton = page.getByRole("button", { name: "Approve a request on my Microsoft Authenticator app" });
     this.rememberMeButton = page.getByRole("button", { name: "Yes" });
   }
 
@@ -45,15 +46,15 @@ export default class LoginPage extends BasePage {
     } catch {
       console.log("ℹ Verify did not appear. Continuing...");
     }
-
-    const approveButton = this.page.getByRole("button", {
-      name: /Approve a request on my Microsoft Authenticator app/i,
-    });
-
-    if (await approveButton.isVisible().catch(() => false)) {
-      console.log("✔ Approve request appeared — clicking it.");
-      await approveButton.click().catch(() => {});
+    try {
+      await this.verifyButton.waitFor({ state: "visible", timeout: 15000 });
+      console.log("✔ Approve appeared — clicking it.");
+      await this.approveButton.click({ timeout: 15000 });
+    } catch {
+      console.log("ℹ Approve did not appear. Continuing...");
     }
+
+
   }
 
   async enterTOTP(secret) {
