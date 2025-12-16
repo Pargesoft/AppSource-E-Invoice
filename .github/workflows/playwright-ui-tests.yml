@@ -53,16 +53,7 @@ jobs:
         run: |
           npx playwright test --project=chromium-tests
 
-      - name: Upload Playwright artifacts (report / test-results)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-artifacts
-          path: |
-            PlaywrightTests/playwright-report
-            PlaywrightTests/test-results
-          if-no-files-found: warn
-          retention-days: 7    
+  
 
       - name: Run API tests
         env:
@@ -75,13 +66,22 @@ jobs:
           
         run: |
           npx playwright test --project=api
-
+      - name: Upload Allure Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: |
+            PlaywrightTests/allure-report
+            PlaywrightTests/allure-results
+          if-no-files-found: warn
+          retention-days: 7
       
       - name: Upload Playwright HTML report
         if: always()   # testler fail olsa bile rapor gelsin
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-html-report
+          name: playwright-reports
           path: PlaywrightTests/playwright-report
           if-no-files-found: warn
           retention-days: 7
