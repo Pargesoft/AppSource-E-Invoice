@@ -31,6 +31,7 @@ test('@smoke BC ana sayfa + Bank List ekranı testleri', async ({ page }) => {
   await expect(frame.getByText('Bank List:')).toBeVisible();
   await expect(frame.getByTitle('Go to role centre')).toBeVisible();
   await expect(frame.getByLabel('AKBANK T.A.Ş')).toContainText('AKBANK T.A.Ş.');
+  await expect(frame.getByText('Bank List:')).toBeVisible();
   await expect(frame.locator('#page-captionb8s')).toHaveText('Bank List:');
 
   console.log('✔ Bank List ekranı başarıyla test edildi.');
