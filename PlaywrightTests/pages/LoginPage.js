@@ -47,7 +47,7 @@ export default class LoginPage extends BasePage {
       console.log("ℹ Verify did not appear. Continuing...");
     }
     try {
-      await this.verifyButton.waitFor({ state: "visible", timeout: 15000 });
+      await this.approveButton.waitFor({ state: "visible", timeout: 15000 });
       console.log("✔ Approve appeared — clicking it.");
       await this.approveButton.click({ timeout: 15000 });
     } catch {
