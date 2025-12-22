@@ -1,4 +1,4 @@
-// Yorum satırı
+// Yorum satırı sahin 
 xmlport 70093471 "PRG_E-Invoice Import User List"
 {
     Format = Xml;
