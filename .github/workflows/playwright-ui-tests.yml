@@ -89,15 +89,24 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path ../public | Out-Null
-          Copy-Item -Recurse -Force playwright-report/* public/
+          # defaults.working-directory = PlaywrightTests olduğu için repo köküne çıkıyoruz
+          $siteDir = Join-Path $env:GITHUB_WORKSPACE "public"
 
-      # ✅ Pages artifact (zip gibi görünmez; Pages deploy için internal)
+          # temiz kurulum: önce varsa sil, sonra yeniden oluştur
+          if (Test-Path $siteDir) { Remove-Item -Recurse -Force $siteDir }
+          New-Item -ItemType Directory -Force -Path $siteDir | Out-Null
+
+          # PlaywrightTests/playwright-report içeriğini repo kökü public'e kopyala
+          Copy-Item -Path (Join-Path $env:GITHUB_WORKSPACE "PlaywrightTests\playwright-report\*") `
+                    -Destination $siteDir `
+                    -Recurse -Force
+
       - name: Upload Pages artifact
         if: always()
         uses: actions/upload-pages-artifact@v3
         with:
-          path: PlaywrightTests/public
+          path: public
+
 
   deploy-pages:
     if: always()
