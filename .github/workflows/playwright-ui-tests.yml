@@ -3,15 +3,25 @@ name: Playwright UI + API Tests (Manual)
 on:
   workflow_dispatch:
 
-
 defaults:
   run:
     working-directory: PlaywrightTests
 
+# ✅ GitHub Pages deploy için gerekli izinler
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# (Opsiyonel) Aynı anda birden fazla deploy olmasın
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
   playwright-tests:
     runs-on: windows-latest
-    environment: LocalizationSandbox 
+    environment: LocalizationSandbox
 
     steps:
       - name: Checkout repository
@@ -24,7 +34,6 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          # workspace köküne göre path
           cache-dependency-path: PlaywrightTests/package-lock.json
 
       - name: Install dependencies (npm ci)
@@ -42,7 +51,6 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Run UI tests
-        working-directory: PlaywrightTests  
         env:
           BC_BASE_URL: ${{ secrets.BC_BASE_URL }}
           BC_USERNAME: ${{ secrets.BC_USERNAME }}
@@ -53,10 +61,8 @@ jobs:
         run: |
           npx playwright test --project=chromium-tests
 
-  
-
       - name: Run API tests (optional)
-        continue-on-error: true  
+        continue-on-error: true
         env:
           BC_TENANT_ID: ${{ secrets.BC_TENANT_ID }}
           BC_CLIENT_ID: ${{ secrets.BC_CLIENT_ID }}
@@ -64,29 +70,44 @@ jobs:
           BC_COMPANY_ID: ${{ secrets.BC_COMPANY_ID }}
           BC_BASE_URL: ${{ secrets.BC_BASE_URL }}
           BC_ENVIRONMENT: ${{ secrets.BC_ENVIRONMENT }}
-          
         run: |
           npx playwright test --project=api
-          
-      - name: Generate Allure report
+
+      # ✅ Playwright HTML report zaten playwright-report altında oluşur.
+      # Eğer kapanırsa diye "if: always()" ile garantiye alıyoruz.
+      - name: Upload Playwright HTML report (artifact)
         if: always()
-        run: npx allure generate allure-results --clean -o allure-report    
-      - name: Upload Allure Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-report
-          path: |
-            PlaywrightTests/allure-report
-            PlaywrightTests/allure-results
-          if-no-files-found: warn
-          retention-days: 7
-      
-      - name: Upload Playwright HTML report
-        if: always()   # testler fail olsa bile rapor gelsin
         uses: actions/upload-artifact@v4
         with:
           name: playwright-reports
           path: PlaywrightTests/playwright-report
           if-no-files-found: warn
           retention-days: 7
+
+      # ✅ GitHub Pages'e publish edeceğimiz "site" klasörünü hazırlıyoruz
+      - name: Prepare Pages site (Playwright report)
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path ../public | Out-Null
+          Copy-Item -Recurse -Force playwright-report/* ../public/
+
+      # ✅ Pages artifact (zip gibi görünmez; Pages deploy için internal)
+      - name: Upload Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy-pages:
+    if: always()
+    needs: playwright-tests
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
