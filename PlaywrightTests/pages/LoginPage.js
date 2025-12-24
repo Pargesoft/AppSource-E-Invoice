@@ -11,14 +11,18 @@ export default class LoginPage extends BasePage {
     this.passwordInput = page.getByPlaceholder("Password");
     this.nextButton = page.getByRole("button", { name: "Next" });
     this.signInButton = page.getByRole("button", { name: "Sign in" });
+
     this.authenticatorAppLink = page.getByRole("link", {
-      name: "I can't use my Microsoft Authenticator app right now"
+      name: "I can't use my Microsoft Authenticator app right now",
     });
+
     this.useVerificationCodeButton = page.getByRole("button", {
-      name: "Use a verification code"
+      name: "Use a verification code",
     });
+
     this.otpInput = page.getByPlaceholder("Code");
     this.verifyButton = page.getByRole("button", { name: "Verify" });
+    this.approveButton = page.getByRole("button", { name: "Approve a request on my Microsoft Authenticator app" });
     this.rememberMeButton = page.getByRole("button", { name: "Yes" });
   }
 
@@ -35,23 +39,22 @@ export default class LoginPage extends BasePage {
     await this.passwordInput.fill(password);
     await this.signInButton.click();
 
-  
-    if (await this.verifyButton.isVisible().catch(() => false)) {
-      console.log("✔ Verify button appeared after password — clicking it.");
-      await this.verifyButton.click();
-
-      // Approve request butonunu ara
-      const approveButton = this.page.getByRole("button", { 
-        name: "Approve a request on my Microsoft Authenticator app" 
-      });
-
-      if (await approveButton.isVisible().catch(() => false)) {
-        console.log("✔ Approve request button appeared — clicking it.");
-        await approveButton.click();
-      }
-
+    try {
+      await this.verifyButton.waitFor({ state: "visible", timeout: 15000 });
+      console.log("✔ Verify appeared — clicking it.");
+      await this.verifyButton.click({ timeout: 15000 });
+    } catch {
+      console.log("ℹ Verify did not appear. Continuing...");
     }
- 
+    try {
+      await this.approveButton.waitFor({ state: "visible", timeout: 15000 });
+      console.log("✔ Approve appeared — clicking it.");
+      await this.approveButton.click({ timeout: 15000 });
+    } catch {
+      console.log("ℹ Approve did not appear. Continuing...");
+    }
+
+
   }
 
   async enterTOTP(secret) {
