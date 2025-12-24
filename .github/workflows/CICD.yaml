@@ -2,12 +2,12 @@ name: ' CI/CD'
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     paths-ignore:
       - '**.md'
       - '.github/workflows/*.yaml'
       - '!.github/workflows/CICD.yaml'
-    branches: [ 'main', 'release/*', 'feature/*' ]
+    branches: [ 'main', 'release/*' ]
 
 defaults:
   run:

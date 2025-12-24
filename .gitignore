@@ -31,6 +31,7 @@ yarn-error.log*
 
 # Playwright Artifacts
 playwright-report/
+allure-results/
 test-results/
 blob-report/
 trace.zip
