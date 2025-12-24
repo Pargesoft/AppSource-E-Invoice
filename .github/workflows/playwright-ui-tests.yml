@@ -90,14 +90,14 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path ../public | Out-Null
-          Copy-Item -Recurse -Force playwright-report/* ../public/
+          Copy-Item -Recurse -Force playwright-report/* public/
 
       # ✅ Pages artifact (zip gibi görünmez; Pages deploy için internal)
       - name: Upload Pages artifact
         if: always()
         uses: actions/upload-pages-artifact@v3
         with:
-          path: public
+          path: PlaywrightTests/public
 
   deploy-pages:
     if: always()
