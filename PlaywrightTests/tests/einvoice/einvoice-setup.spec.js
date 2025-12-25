@@ -2,14 +2,10 @@
 import { test, expect } from '@playwright/test';
 import { BC_BASE_URL } from '../../utils/env.js';
 
-/**
- * ✅ Unicode-safe normalize
- * - Türkçe İ / i̇ problemi çözer
- */
 const norm = (s) =>
   (s || '')
-    .normalize('NFKD')                 // birleşik karakterleri ayır
-    .replace(/[\u0300-\u036f]/g, '')   // combining marks temizle (i̇ gibi)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
@@ -20,7 +16,6 @@ async function openMenu(frame) {
 
   await frame.getByRole('menuitem', { name: /Pargesoft E-Fatura/i }).click();
 
-  // Sabitle görünüyorsa menü açıldı
   await expect(frame.getByRole('button', { name: /Sabitle/i }))
     .toBeVisible({ timeout: 30000 });
 
@@ -36,6 +31,45 @@ async function getGrid(frame) {
   return grid;
 }
 
+// ✅ Grid’i en üste al (her aramada baştan başlasın, süre düşer)
+async function resetGridToTop({ page, grid }) {
+  await grid.click().catch(() => {});
+  await page.keyboard.press('Home').catch(() => {});
+  await page.waitForTimeout(80);
+}
+
+async function findRowByContainsAll({
+  page,
+  grid,
+  mustContain = [],
+  maxScrolls = 40,     // ✅ default: eskiden 120 idi
+  waitMs = 80,         // ✅ default: eskiden 150 idi
+}) {
+  const must = mustContain.map(norm);
+
+  for (let i = 0; i < maxScrolls; i++) {
+    const rows = grid.getByRole('row');
+    const count = await rows.count();
+
+    for (let r = 0; r < count; r++) {
+      const row = rows.nth(r);
+      const txtN = norm(await row.innerText().catch(() => ''));
+      if (!txtN) continue;
+
+      const ok = must.every((m) => txtN.includes(m));
+      if (ok) return row;
+    }
+
+    await page.keyboard.press('PageDown');
+    await page.waitForTimeout(waitMs);
+  }
+
+  return null;
+}
+
+// ------------------------------
+// 1) DURUM KODLARI
+// ------------------------------
 test('@smoke E-Fatura Durum Kodları sayfası validasyonlar', async ({ page }) => {
   test.setTimeout(5 * 60 * 1000);
 
@@ -43,10 +77,8 @@ test('@smoke E-Fatura Durum Kodları sayfası validasyonlar', async ({ page }) =
   const frame = page.frameLocator('iframe[title="undefined"]');
 
   await openMenu(frame);
-
   await frame.getByRole('menuitem', { name: /E-Fatura Durum Kodları/i }).click();
 
-  // ✅  caption check
   await expect(frame.locator('[id^="page-caption"]'))
     .toContainText(/E-Fatura Durum Kodları:/i);
 
@@ -65,38 +97,29 @@ test('@smoke E-Fatura Durum Kodları sayfası validasyonlar', async ({ page }) =
   ];
 
   const grid = await getGrid(frame);
-
-  async function findRowByCodeAndDesc(code, description, maxScrolls = 60) {
-    const codeN = norm(code);
-    const descN = norm(description);
-
-    for (let i = 0; i < maxScrolls; i++) {
-      const rows = grid.getByRole('row');
-      const count = await rows.count();
-
-      for (let r = 0; r < count; r++) {
-        const row = rows.nth(r);
-        const txtN = norm(await row.innerText().catch(() => ''));
-        if (!txtN) continue;
-        if (txtN.includes(codeN) && txtN.includes(descN)) return row;
-      }
-
-      await page.keyboard.press('PageDown');
-      await page.waitForTimeout(150);
-    }
-    return null;
-  }
+  const errors = [];
 
   for (const exp of expectedRows) {
-    const row = await findRowByCodeAndDesc(exp.code, exp.description);
+    await resetGridToTop({ page, grid });
+
+    const row = await findRowByContainsAll({
+      page,
+      grid,
+      mustContain: [exp.code, exp.description],
+      maxScrolls: 25,   // ✅ daha hızlı
+      waitMs: 60,
+    });
 
     if (!row) {
-      await page.screenshot({
-        path: `test-results/missing-statuscode-${exp.code}.png`,
-        fullPage: false,
-      }).catch(() => {});
+      const shot = await page.screenshot({ fullPage: false }).catch(() => null);
+      if (shot) {
+        await test.info().attach(`missing-statuscode-${exp.code}.png`, {
+          body: shot,
+          contentType: 'image/png',
+        });
+      }
 
-      throw new Error(
+      errors.push(
         [
           '❌ E-Fatura Durum Kodu Bulunamadı',
           `Code        : ${exp.code}`,
@@ -104,15 +127,21 @@ test('@smoke E-Fatura Durum Kodları sayfası validasyonlar', async ({ page }) =
           `QueueStatus : ${exp.queueStatus}`,
         ].join('\n')
       );
+      continue;
     }
 
-    const rowTextN = norm(await row.innerText());
-    expect(rowTextN).toContain(norm(exp.code));
-    expect(rowTextN).toContain(norm(exp.description));
-    expect(rowTextN).toContain(norm(exp.queueStatus));
+    const rowTextN = norm(await row.innerText().catch(() => ''));
+    expect.soft(rowTextN).toContain(norm(exp.code));
+    expect.soft(rowTextN).toContain(norm(exp.description));
+    expect.soft(rowTextN).toContain(norm(exp.queueStatus));
   }
+
+  if (errors.length) throw new Error(errors.join('\n\n'));
 });
 
+// ------------------------------
+// 2) KOD EŞLEME
+// ------------------------------
 test('@smoke E-Fatura Kod Eşleme sayfası validasyonlar', async ({ page }) => {
   test.setTimeout(6 * 60 * 1000);
 
@@ -120,10 +149,8 @@ test('@smoke E-Fatura Kod Eşleme sayfası validasyonlar', async ({ page }) => {
   const frame = page.frameLocator('iframe[title="undefined"]');
 
   await openMenu(frame);
-
   await frame.getByRole('menuitem', { name: /E-Fatura Kod Eşleme/i }).click();
 
-  // ✅ Caption doğrulama (strict-safe)
   await expect(frame.locator('[id^="page-caption"]'))
     .toContainText(/E-Fatura Kod Eşleme:/i);
 
@@ -162,38 +189,29 @@ test('@smoke E-Fatura Kod Eşleme sayfası validasyonlar', async ({ page }) => {
   ];
 
   const grid = await getGrid(frame);
-
-  async function findRowByTypeAndSource(type, source, maxScrolls = 80) {
-    const typeN = norm(type);
-    const sourceN = norm(source);
-
-    for (let i = 0; i < maxScrolls; i++) {
-      const rows = grid.getByRole('row');
-      const count = await rows.count();
-
-      for (let r = 0; r < count; r++) {
-        const row = rows.nth(r);
-        const txtN = norm(await row.innerText().catch(() => ''));
-        if (!txtN) continue;
-        if (txtN.includes(typeN) && txtN.includes(sourceN)) return row;
-      }
-
-      await page.keyboard.press('PageDown');
-      await page.waitForTimeout(150);
-    }
-    return null;
-  }
+  const errors = [];
 
   for (const exp of expectedRows) {
-    const row = await findRowByTypeAndSource(exp.type, exp.source);
+    await resetGridToTop({ page, grid });
+
+    const row = await findRowByContainsAll({
+      page,
+      grid,
+      mustContain: [exp.type, exp.source],
+      maxScrolls: 30,
+      waitMs: 60,
+    });
 
     if (!row) {
-      await page.screenshot({
-        path: `test-results/missing-mapping-${exp.type}-${exp.source}.png`,
-        fullPage: false,
-      }).catch(() => {});
+      const shot = await page.screenshot({ fullPage: false }).catch(() => null);
+      if (shot) {
+        await test.info().attach(`missing-mapping-${exp.type}-${exp.source}.png`, {
+          body: shot,
+          contentType: 'image/png',
+        });
+      }
 
-      throw new Error(
+      errors.push(
         [
           '❌ Kod Eşleme Satırı Bulunamadı',
           `Type        : ${exp.type}`,
@@ -202,22 +220,28 @@ test('@smoke E-Fatura Kod Eşleme sayfası validasyonlar', async ({ page }) => {
           `Description : ${exp.description}`,
         ].join('\n')
       );
+      continue;
     }
 
-    const rowTextN = norm(await row.innerText());
-    expect(rowTextN).toContain(norm(exp.type));
-    expect(rowTextN).toContain(norm(exp.source));
-    expect(rowTextN).toContain(norm(exp.destination));
-    expect(rowTextN).toContain(norm(exp.description));
+    const rowTextN = norm(await row.innerText().catch(() => ''));
+    expect.soft(rowTextN).toContain(norm(exp.type));
+    expect.soft(rowTextN).toContain(norm(exp.source));
+    expect.soft(rowTextN).toContain(norm(exp.destination));
+    expect.soft(rowTextN).toContain(norm(exp.description));
   }
+
+  if (errors.length) throw new Error(errors.join('\n\n'));
 });
+
+// ------------------------------
+// 3) VERGİ TÜRÜ KODLARI
+// ------------------------------
 test('@smoke E-Fatura Vergi Türü Kodları sayfası validasyonlar', async ({ page }) => {
   test.setTimeout(8 * 60 * 1000);
 
   await page.goto(BC_BASE_URL, { waitUntil: 'networkidle' });
   const frame = page.frameLocator('iframe[title="undefined"]');
 
-  // senin istediğin giriş adımları (openMenu yerine birebir)
   await frame.getByRole('menuitem', { name: 'Pargesoft E-Fatura' }).click();
   await expect(frame.getByRole('button', { name: 'Sabitle' })).toBeVisible();
 
@@ -226,7 +250,6 @@ test('@smoke E-Fatura Vergi Türü Kodları sayfası validasyonlar', async ({ pa
 
   await frame.getByRole('menuitem', { name: /E-Fatura Vergi Türü Kodu/i }).click();
 
-  // caption check (sayfa başlığın tam metni farklı olabilir)
   await expect(frame.locator('[id^="page-caption"]'))
     .toContainText(/E-Fatura Vergi Türü/i);
 
@@ -272,39 +295,34 @@ test('@smoke E-Fatura Vergi Türü Kodları sayfası validasyonlar', async ({ pa
     { code: '9077', description: 'Motorlu Taşıt Araçlarına İlişkin Özel Tüketim Vergisi (Tescile Tabi Olanlar)', type: 'KDV', calcOrder: '0', rate: '0,00' },
   ];
 
+
+  const SEARCH_SCROLLS = 35; 
+  const SEARCH_WAIT_MS = 60;
+
   const grid = await getGrid(frame);
-
-  async function findRowByCodeAndDesc(code, description, maxScrolls = 120) {
-    const codeN = norm(code);
-    const descN = norm(description);
-
-    for (let i = 0; i < maxScrolls; i++) {
-      const rows = grid.getByRole('row');
-      const count = await rows.count();
-
-      for (let r = 0; r < count; r++) {
-        const row = rows.nth(r);
-        const txtN = norm(await row.innerText().catch(() => ''));
-        if (!txtN) continue;
-        if (txtN.includes(codeN) && txtN.includes(descN)) return row;
-      }
-
-      await page.keyboard.press('PageDown');
-      await page.waitForTimeout(150);
-    }
-    return null;
-  }
+  const errors = [];
 
   for (const exp of expectedRows) {
-    const row = await findRowByCodeAndDesc(exp.code, exp.description);
+    await resetGridToTop({ page, grid });
+
+    const row = await findRowByContainsAll({
+      page,
+      grid,
+      mustContain: [exp.code, exp.description],
+      maxScrolls: SEARCH_SCROLLS,
+      waitMs: SEARCH_WAIT_MS,
+    });
 
     if (!row) {
-      await page.screenshot({
-        path: `test-results/missing-taxtype-${exp.code}.png`,
-        fullPage: false,
-      }).catch(() => {});
+      const shot = await page.screenshot({ fullPage: false }).catch(() => null);
+      if (shot) {
+        await test.info().attach(`missing-taxtype-${exp.code}.png`, {
+          body: shot,
+          contentType: 'image/png',
+        });
+      }
 
-      throw new Error(
+      errors.push(
         [
           '❌ Vergi Türü Kodu satırı bulunamadı',
           `Code       : ${exp.code}`,
@@ -314,13 +332,16 @@ test('@smoke E-Fatura Vergi Türü Kodları sayfası validasyonlar', async ({ pa
           `Rate       : ${exp.rate}`,
         ].join('\n')
       );
+      continue;
     }
 
-    const rowTextN = norm(await row.innerText());
-    expect(rowTextN).toContain(norm(exp.code));
-    expect(rowTextN).toContain(norm(exp.description));
-    expect(rowTextN).toContain(norm(exp.type));
-    expect(rowTextN).toContain(norm(exp.calcOrder));
-    expect(rowTextN).toContain(norm(exp.rate));
+    const rowTextN = norm(await row.innerText().catch(() => ''));
+    expect.soft(rowTextN).toContain(norm(exp.code));
+    expect.soft(rowTextN).toContain(norm(exp.description));
+    expect.soft(rowTextN).toContain(norm(exp.type));
+    expect.soft(rowTextN).toContain(norm(exp.calcOrder));
+    expect.soft(rowTextN).toContain(norm(exp.rate));
   }
+
+  if (errors.length) throw new Error(errors.join('\n\n'));
 });
