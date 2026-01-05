@@ -3,9 +3,7 @@ name: Playwright UI + API Tests (Manual)
 on:
   workflow_dispatch:
 
-defaults:
-  run:
-    working-directory: PlaywrightTests
+
 
 permissions:
   contents: read
@@ -18,6 +16,9 @@ concurrency:
 
 jobs:
   playwright-tests:
+    defaults:
+      run:
+        working-directory: PlaywrightTests
     runs-on: windows-latest
     environment: LocalizationSandbox
 
@@ -114,6 +115,7 @@ jobs:
       - name: Notify Microsoft Teams (GitHub Pages link)
         if: always()
         shell: bash
+        working-directory: ${{ github.workspace }}
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
           PAGES_URL: ${{ steps.deployment.outputs.page_url }}
