@@ -7,13 +7,11 @@ defaults:
   run:
     working-directory: PlaywrightTests
 
-# ✅ GitHub Pages deploy için gerekli izinler
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# (Opsiyonel) Aynı anda birden fazla deploy olmasın
 concurrency:
   group: "pages"
   cancel-in-progress: true
@@ -73,8 +71,6 @@ jobs:
         run: |
           npx playwright test --project=api
 
-      # ✅ Playwright HTML report zaten playwright-report altında oluşur.
-      # Eğer kapanırsa diye "if: always()" ile garantiye alıyoruz.
       - name: Upload Playwright HTML report (artifact)
         if: always()
         uses: actions/upload-artifact@v4
@@ -84,19 +80,13 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      # ✅ GitHub Pages'e publish edeceğimiz "site" klasörünü hazırlıyoruz
       - name: Prepare Pages site (Playwright report)
         if: always()
         shell: pwsh
         run: |
-          # defaults.working-directory = PlaywrightTests olduğu için repo köküne çıkıyoruz
           $siteDir = Join-Path $env:GITHUB_WORKSPACE "public"
-
-          # temiz kurulum: önce varsa sil, sonra yeniden oluştur
           if (Test-Path $siteDir) { Remove-Item -Recurse -Force $siteDir }
           New-Item -ItemType Directory -Force -Path $siteDir | Out-Null
-
-          # PlaywrightTests/playwright-report içeriğini repo kökü public'e kopyala
           Copy-Item -Path (Join-Path $env:GITHUB_WORKSPACE "PlaywrightTests\playwright-report\*") `
                     -Destination $siteDir `
                     -Recurse -Force
@@ -106,7 +96,6 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
-
 
   deploy-pages:
     if: always()
@@ -120,3 +109,41 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # ✅ Teams'e GitHub Pages linkini gönder
+      - name: Notify Microsoft Teams (GitHub Pages link)
+        if: always()
+        shell: bash
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d "{
+                 \"@type\": \"MessageCard\",
+                 \"@context\": \"http://schema.org/extensions\",
+                 \"summary\": \"Playwright Test Report\",
+                 \"themeColor\": \"0078D7\",
+                 \"title\": \"✅ Playwright Test Report Published\",
+                 \"sections\": [
+                   {
+                     \"facts\": [
+                       { \"name\": \"Repository\", \"value\": \"${REPO}\" },
+                       { \"name\": \"Workflow Run\", \"value\": \"${RUN_ID}\" }
+                     ],
+                     \"text\": \"📊 **Playwright HTML Test Report** başarıyla GitHub Pages'e yayınlandı.\"
+                   }
+                 ],
+                 \"potentialAction\": [
+                   {
+                     \"@type\": \"OpenUri\",
+                     \"name\": \"View Test Report\",
+                     \"targets\": [
+                       { \"os\": \"default\", \"uri\": \"${PAGES_URL}\" }
+                     ]
+                   }
+                 ]
+               }" \
+               $TEAMS_WEBHOOK_URL
