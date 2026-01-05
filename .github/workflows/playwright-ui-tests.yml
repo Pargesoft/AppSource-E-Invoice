@@ -125,8 +125,11 @@ jobs:
           fi
 
           RUN_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          TEXT="✅ Playwright smoke testleri tamamlandı.\n\nSonuçlar: ${PAGES_URL}\nRun detayları: ${RUN_URL}"
+
+          TEXT=$'✅ Playwright smoke testleri tamamlandı.\n\nTest Raporu : '"$PAGES_URL"$'\nRun Detayları : '"$RUN_URL"
+
+          payload="$(jq -n --arg text "$TEXT" '{text: $text}')"
 
           curl -H "Content-Type: application/json" \
-               -d "{\"text\": \"${TEXT}\"}" \
+               -d "$payload" \
                "$TEAMS_WEBHOOK_URL"
