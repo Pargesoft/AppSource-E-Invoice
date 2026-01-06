@@ -147,12 +147,12 @@ jobs:
                       },
                       {
                         "type": "TextBlock",
-                        "text": "Test Raporu : \($pages)",
+                        "text": "[Test Raporu]($pages)",
                         "wrap": true
                       },
                       {
                         "type": "TextBlock",
-                        "text": "Run Detayları : \($run)",
+                        "text": "[Run Detayları]($run)",
                         "wrap": true
                       }
                     ]
