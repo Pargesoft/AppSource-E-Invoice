@@ -134,9 +134,7 @@ jobs:
                     "type": "AdaptiveCard",
                     "version": "1.4",
                     "body": [
-                      { "type": "TextBlock", "text": "✅ Playwright smoke testleri tamamlandı.", "wrap": true, "weight": "Bolder" },
-                      { "type": "TextBlock", "text": ("Test Raporu : " + $pages), "wrap": true },
-                      { "type": "TextBlock", "text": ("Run Detayları : " + $run), "wrap": true }
+                      { "type": "TextBlock", "text": "✅ Playwright smoke testleri tamamlandı.", "wrap": true, "weight": "Bolder" }
                     ],
                     "actions": [
                       { "type": "Action.OpenUrl", "title": "Test Raporu", "url": $pages },
@@ -149,4 +147,5 @@ jobs:
           )"
 
           curl -H "Content-Type: application/json" -d "$payload" "$TEAMS_WEBHOOK_URL"
+
 
