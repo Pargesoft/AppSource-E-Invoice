@@ -126,10 +126,40 @@ jobs:
 
           RUN_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
-          TEXT=$'✅ Playwright smoke testleri tamamlandı.\n\nTest Raporu : '"$PAGES_URL"$'\nRun Detayları : '"$RUN_URL"
+          payload="$(jq -n \
+            --arg pages "$PAGES_URL" \
+            --arg run "$RUN_URL" \
+            '{
+              "type": "message",
+              "attachments": [
+                {
+                  "contentType": "application/vnd.microsoft.card.adaptive",
+                  "content": {
+                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                    "type": "AdaptiveCard",
+                    "version": "1.4",
+                    "body": [
+                      {
+                        "type": "TextBlock",
+                        "text": "✅ Playwright smoke testleri tamamlandı.",
+                        "wrap": true,
+                        "weight": "Bolder"
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "Test Raporu : \($pages)",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "Run Detayları : \($run)",
+                        "wrap": true
+                      }
+                    ]
+                  }
+                }
+              ]
+            }'
+          )"
 
-          payload="$(jq -n --arg text "$TEXT" '{text: $text}')"
-
-          curl -H "Content-Type: application/json" \
-               -d "$payload" \
-               "$TEAMS_WEBHOOK_URL"
+          curl -H "Content-Type: application/json" -d "$payload" "$TEAMS_WEBHOOK_URL"
