@@ -112,18 +112,13 @@ jobs:
         uses: actions/deploy-pages@v4
 
 
-      - name: Notify Teams (Playwright report link)
+      - name: Notify Teams (Playwright report)
         if: always()
         shell: bash
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
           PAGES_URL: https://pargesoft.github.io/AppSource-E-Invoice/
         run: |
-          if [ -z "$TEAMS_WEBHOOK_URL" ]; then
-            echo "TEAMS_WEBHOOK_URL is empty. Check secret/environment scope."
-            exit 1
-          fi
-
           RUN_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
           payload="$(jq -n \
@@ -139,22 +134,13 @@ jobs:
                     "type": "AdaptiveCard",
                     "version": "1.4",
                     "body": [
-                      {
-                        "type": "TextBlock",
-                        "text": "✅ Playwright smoke testleri tamamlandı.",
-                        "wrap": true,
-                        "weight": "Bolder"
-                      },
-                      {
-                        "type": "TextBlock",
-                        "text": "[Test Raporu]($pages)",
-                        "wrap": true
-                      },
-                      {
-                        "type": "TextBlock",
-                        "text": "[Run Detayları]($run)",
-                        "wrap": true
-                      }
+                      { "type": "TextBlock", "text": "✅ Playwright smoke testleri tamamlandı.", "wrap": true, "weight": "Bolder" },
+                      { "type": "TextBlock", "text": ("Test Raporu : " + $pages), "wrap": true },
+                      { "type": "TextBlock", "text": ("Run Detayları : " + $run), "wrap": true }
+                    ],
+                    "actions": [
+                      { "type": "Action.OpenUrl", "title": "Test Raporu", "url": $pages },
+                      { "type": "Action.OpenUrl", "title": "Run Detayları", "url": $run }
                     ]
                   }
                 }
@@ -163,3 +149,4 @@ jobs:
           )"
 
           curl -H "Content-Type: application/json" -d "$payload" "$TEAMS_WEBHOOK_URL"
+
