@@ -1,17 +1,19 @@
 {
     "version": "0.2.0",
     "configurations": [
-         {
-            "name": "Localization Sandbox",
+        {
+            "name": "Localization Container",
             "request": "launch",
             "type": "al",
-            "environmentType": "Sandbox",
-            "environmentName": "LocalizationSandbox",
-            "breakOnError": true,
+            "environmentType": "OnPrem",
+            "serverInstance": "bc",
+            "server": "http://bcserver",
+            "tenant": "default",
+            "authentication": "UserPassword",
+            "breakOnError": "ExcludeTry",
             "launchBrowser": true,
             "enableLongRunningSqlStatements": true,
             "enableSqlInformationDebugger": true,
-            "tenant": "efc338e1-fedb-4ef5-abc9-455ce95bf2b9",
             "schemaUpdateMode": "ForceSync"
         }
     ]
