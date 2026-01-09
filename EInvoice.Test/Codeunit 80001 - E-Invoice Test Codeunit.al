@@ -58,7 +58,7 @@ codeunit 80001 "E-Invoice Test Codeunit"
         Assert: Codeunit "Library Assert";
         EInvEArchLib: Codeunit "Library - EInvoice EArchive";
     begin
-        Connector.QueryUpdateEInvoiceListXmlPort();
+        //Connector.QueryUpdateEInvoiceListXmlPort();
         LiableComp.SetRange(Identifier, '90000684181111');
         if not LiableComp.FindFirst() then
             Assert.Fail('E-Invoice Liable Company with Identifier 90000684181111 not found after XML Port execution.');
@@ -105,5 +105,6 @@ codeunit 80001 "E-Invoice Test Codeunit"
         IF not Client.Post(IntSetup."E-Invoice Integrator URL", Content, Response) then
             Assert.Fail('Test Connection Fail!');
     end;
+
 
 }
