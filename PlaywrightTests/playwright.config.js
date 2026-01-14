@@ -1,43 +1,46 @@
-import { defineConfig, devices } from '@playwright/test';
+// playwright.config.js
+import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: "./PlaywrightTests/tests",
   timeout: 120 * 1000,
 
-  // HTML report’u her koşulda üret
   reporter: [
-    ['html', { open: 'never', outputFolder: 'playwright-report' }],
-    ['allure-playwright', { outputFolder: 'allure-results' }],
-    ['list'],
+    ["html", { open: "never", outputFolder: "playwright-report" }],
+    ["list"],
   ],
 
-  // Fail olunca screenshot/trace/video zaten doğru
   use: {
-    screenshot: 'only-on-failure',
-    trace: 'retain-on-failure',
-    video: 'retain-on-failure',
+    screenshot: "only-on-failure",
+    trace: "retain-on-failure",
+    video: "retain-on-failure",
   },
 
   projects: [
     {
-      name: 'setup',
+      name: "setup",
       testMatch: /auth\.setup\.spec\.js/,
     },
     {
-      name: 'chromium-tests',
-      testMatch: /.*\.spec\.js/,
-      testIgnore: [/auth\.setup\.spec\.js/, /api\/.*\.spec\.js/],
+      name: "ui",
+      testMatch: [/.*\.ui\.spec\.js/, /.*\.spec\.js/],
+      testIgnore: [/auth\.setup\.spec\.js/, /.*\.hybrid\.spec\.js/],
       use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'storageState.json',
-        headless: true, // CI’de bunu true yapmanı öneririm
+        ...devices["Desktop Chrome"],
+        storageState: "storageState.json",
+        headless: true,
       },
-      dependencies: ['setup'],
+      dependencies: ["setup"],
     },
     {
-      name: 'api',
-      testMatch: /api\/.*\.spec\.js/,
-      use: { baseURL: '', storageState: undefined },
+      name: "hybrid",
+      testMatch: /.*\.hybrid\.spec\.js/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "storageState.json",
+        headless: true,
+      },
+      dependencies: ["setup"],
     },
   ],
 });

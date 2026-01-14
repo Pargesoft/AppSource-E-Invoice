@@ -1,99 +1,53 @@
-// PlaywrightTests/tests/einvoice/einvoice-setup.spec.js
-import { test, expect } from '@playwright/test';
-import { BC_BASE_URL } from '../../utils/env.js';
+import { test, expect } from "@playwright/test";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const norm = (s) =>
-  (s || '')
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
+import { BC_BASE_URL } from "../../utils/env.js";
+import { getBCFrame } from "../../utils/bc/bc.frame.js";
+import { openEFaturaSetupMenu, openMenuItem } from "../../utils/bc/bc.shell.js";
+import { getGrid, resetGridToTop, findRowByContainsAll } from "../../utils/bc/bc.grid.js";
+import { normalizeText } from "../../utils/bc/bc.text.js";
 
-async function openMenu(frame) {
-  await expect(frame.getByRole('form', { name: /Business Manager/i }))
-    .toBeVisible({ timeout: 60000 });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const storageStatePath = path.resolve(__dirname, "../../../storageState.json");
 
-  await frame.getByRole('menuitem', { name: /Pargesoft E-Fatura/i }).click();
+test.use({ storageState: storageStatePath });
 
-  await expect(frame.getByRole('button', { name: /Sabitle/i }))
-    .toBeVisible({ timeout: 30000 });
-
-  await frame.getByRole('menuitem', { name: /^Kurulum$/i }).click();
-  await expect(frame.getByRole('menu', { name: /^Kurulum$/i }))
-    .toBeVisible({ timeout: 30000 });
-}
-
-async function getGrid(frame) {
-  const grid = frame.locator('[role="grid"]:has([role="gridcell"])').first();
-  await expect(grid).toBeVisible({ timeout: 30000 });
-  await grid.click().catch(() => {});
-  return grid;
-}
-
-// ✅ Grid’i en üste al (her aramada baştan başlasın, süre düşer)
-async function resetGridToTop({ page, grid }) {
-  await grid.click().catch(() => {});
-  await page.keyboard.press('Home').catch(() => {});
-  await page.waitForTimeout(80);
-}
-
-async function findRowByContainsAll({
-  page,
-  grid,
-  mustContain = [],
-  maxScrolls = 40,     // ✅ default: eskiden 120 idi
-  waitMs = 80,         // ✅ default: eskiden 150 idi
-}) {
-  const must = mustContain.map(norm);
-
-  for (let i = 0; i < maxScrolls; i++) {
-    const rows = grid.getByRole('row');
-    const count = await rows.count();
-
-    for (let r = 0; r < count; r++) {
-      const row = rows.nth(r);
-      const txtN = norm(await row.innerText().catch(() => ''));
-      if (!txtN) continue;
-
-      const ok = must.every((m) => txtN.includes(m));
-      if (ok) return row;
-    }
-
-    await page.keyboard.press('PageDown');
-    await page.waitForTimeout(waitMs);
-  }
-
-  return null;
-}
-
+test.beforeEach(async ({ page }) => {
+  await page.goto(BC_BASE_URL, { waitUntil: "domcontentloaded" });
+  // Debug için açabilirsin:
+  // console.log("URL:", page.url());
+  // await page.screenshot({ path: "after-goto.png", fullPage: true });
+});
 // ------------------------------
 // 1) DURUM KODLARI
 // ------------------------------
-test('@smoke E-Fatura Durum Kodları sayfası validasyonlar', async ({ page }) => {
+test("@smoke E-Fatura Durum Kodları sayfası validasyonlar", async ({ page }) => {
   test.setTimeout(5 * 60 * 1000);
 
-  await page.goto(BC_BASE_URL, { waitUntil: 'networkidle' });
-  const frame = page.frameLocator('iframe[title="undefined"]');
+  await page.goto(BC_BASE_URL, { waitUntil: "domcontentloaded" });
+  const frame = await getBCFrame(page);
 
-  await openMenu(frame);
-  await frame.getByRole('menuitem', { name: /E-Fatura Durum Kodları/i }).click();
+
+  await openEFaturaSetupMenu(frame);
+  await openMenuItem(frame, /E-Fatura Durum Kodları/i);
 
   await expect(frame.locator('[id^="page-caption"]'))
     .toContainText(/E-Fatura Durum Kodları:/i);
 
   const expectedRows = [
-    { code: '0',    description: 'Taslak',               queueStatus: 'Servise Gönderildi' },
-    { code: '10',   description: 'İptal Edildi',         queueStatus: 'İptal Edildi' },
-    { code: '100',  description: 'Kuyrukta',             queueStatus: 'Servise Gönderildi' },
-    { code: '1000', description: 'Onaylandı',            queueStatus: 'Onaylandı' },
-    { code: '1100', description: 'Onay Bekliyor',        queueStatus: 'Servise Gönderildi' },
-    { code: '1200', description: 'Reddedildi',           queueStatus: 'Reddedildi' },
-    { code: '1300', description: 'İade Edildi',          queueStatus: 'İptal Edildi' },
-    { code: '1400', description: 'E-Arşiv İptal Edildi', queueStatus: 'İptal Edildi' },
-    { code: '200',  description: 'İşlemde',              queueStatus: 'Servise Gönderildi' },
-    { code: '2000', description: 'Hata',                 queueStatus: 'Başarısız' },
-    { code: '300',  description: "Gib'e Gönderildi.",    queueStatus: 'Servise Gönderildi' },
+    { code: "0",    description: "Taslak",               queueStatus: "Servise Gönderildi" },
+    { code: "10",   description: "İptal Edildi",         queueStatus: "İptal Edildi" },
+    { code: "100",  description: "Kuyrukta",             queueStatus: "Servise Gönderildi" },
+    { code: "1000", description: "Onaylandı",            queueStatus: "Onaylandı" },
+    { code: "1100", description: "Onay Bekliyor",        queueStatus: "Servise Gönderildi" },
+    { code: "1200", description: "Reddedildi",           queueStatus: "Reddedildi" },
+    { code: "1300", description: "İade Edildi",          queueStatus: "İptal Edildi" },
+    { code: "1400", description: "E-Arşiv İptal Edildi", queueStatus: "İptal Edildi" },
+    { code: "200",  description: "İşlemde",              queueStatus: "Servise Gönderildi" },
+    { code: "2000", description: "Hata",                 queueStatus: "Başarısız" },
+    { code: "300",  description: "Gib'e Gönderildi.",    queueStatus: "Servise Gönderildi" },
   ];
 
   const grid = await getGrid(frame);
@@ -106,7 +60,7 @@ test('@smoke E-Fatura Durum Kodları sayfası validasyonlar', async ({ page }) =
       page,
       grid,
       mustContain: [exp.code, exp.description],
-      maxScrolls: 25,   // ✅ daha hızlı
+      maxScrolls: 25,
       waitMs: 60,
     });
 
@@ -115,77 +69,63 @@ test('@smoke E-Fatura Durum Kodları sayfası validasyonlar', async ({ page }) =
       if (shot) {
         await test.info().attach(`missing-statuscode-${exp.code}.png`, {
           body: shot,
-          contentType: 'image/png',
+          contentType: "image/png",
         });
       }
 
       errors.push(
         [
-          '❌ E-Fatura Durum Kodu Bulunamadı',
+          "❌ E-Fatura Durum Kodu Bulunamadı",
           `Code        : ${exp.code}`,
           `Description : ${exp.description}`,
           `QueueStatus : ${exp.queueStatus}`,
-        ].join('\n')
+        ].join("\n")
       );
       continue;
     }
 
-    const rowTextN = norm(await row.innerText().catch(() => ''));
-    expect.soft(rowTextN).toContain(norm(exp.code));
-    expect.soft(rowTextN).toContain(norm(exp.description));
-    expect.soft(rowTextN).toContain(norm(exp.queueStatus));
+    const rowTextN = normalizeText(await row.innerText().catch(() => ""));
+    expect.soft(rowTextN).toContain(normalizeText(exp.code));
+    expect.soft(rowTextN).toContain(normalizeText(exp.description));
+    expect.soft(rowTextN).toContain(normalizeText(exp.queueStatus));
   }
 
-  if (errors.length) throw new Error(errors.join('\n\n'));
+  if (errors.length) throw new Error(errors.join("\n\n"));
 });
 
 // ------------------------------
 // 2) KOD EŞLEME
 // ------------------------------
-test('@smoke E-Fatura Kod Eşleme sayfası validasyonlar', async ({ page }) => {
+test("@smoke E-Fatura Kod Eşleme sayfası validasyonlar", async ({ page }) => {
   test.setTimeout(6 * 60 * 1000);
 
-  await page.goto(BC_BASE_URL, { waitUntil: 'networkidle' });
-  const frame = page.frameLocator('iframe[title="undefined"]');
+  await page.goto(BC_BASE_URL, { waitUntil: "domcontentloaded" });
+  const frame = await getBCFrame(page);
 
-  await openMenu(frame);
-  await frame.getByRole('menuitem', { name: /E-Fatura Kod Eşleme/i }).click();
+  await openEFaturaSetupMenu(frame);
+  await openMenuItem(frame, /E-Fatura Kod Eşleme/i);
 
   await expect(frame.locator('[id^="page-caption"]'))
-    .toContainText(/E-Fatura Kod Eşleme:/i);
+    .toContainText(/E-Fatura Kod Eşleme/i);
 
   const expectedRows = [
-    { type: 'Para Birimi', source: 'TRY', destination: 'TRY', description: 'TRY' },
-    { type: 'Para Birimi', source: 'EUR', destination: 'EUR', description: 'EUR FOREX ALIŞ' },
-    { type: 'Para Birimi', source: 'GBP', destination: 'GBP', description: 'GBP FOREX ALIŞ' },
-    { type: 'Para Birimi', source: 'USD', destination: 'USD', description: 'USD FOREX ALIŞ' },
+    { type: "Ülke", source: "SA", destination: "SA", description: "SAUDI ARABIA" },
+    { type: "Ülke", source: "UK", destination: "GB", description: "İngiltere" },
 
-    { type: 'Ülke', source: 'TR', destination: 'TR', description: 'TÜRKİYE CUMHURİYETİ' },
-    { type: 'Ülke', source: 'CA', destination: 'CA', description: 'CANADA' },
-    { type: 'Ülke', source: 'DE', destination: 'DE', description: 'GERMANY' },
-    { type: 'Ülke', source: 'ES', destination: 'ES', description: 'SPAIN' },
-    { type: 'Ülke', source: 'IT', destination: 'IT', description: 'IT' },
-    { type: 'Ülke', source: 'MV', destination: 'MV', description: 'MALDIVES' },
-    { type: 'Ülke', source: 'NL', destination: 'NL', description: 'NETHERLANDS' },
-    { type: 'Ülke', source: 'QA', destination: 'QA', description: 'QATAR' },
-    { type: 'Ülke', source: 'RO', destination: 'RO', description: 'ROMANIA' },
-    { type: 'Ülke', source: 'SA', destination: 'SA', description: 'SAUDI ARABIA' },
-    { type: 'Ülke', source: 'UK', destination: 'GB', description: 'İngiltere' },
+    { type: "UOM", source: "NIU",   destination: "NIU", description: "ADET" },
+    { type: "UOM", source: "ADET",  destination: "NIU", description: "ADET" },
+    { type: "UOM", source: "KASA",  destination: "NIU", description: "KASA" },
+    { type: "UOM", source: "METRE", destination: "MTR", description: "METRE" },
+    { type: "UOM", source: "PAKET", destination: "NIU", description: "PAKET" },
 
-    { type: 'UOM', source: 'NIU',   destination: 'NIU', description: 'ADET' },
-    { type: 'UOM', source: 'ADET',  destination: 'NIU', description: 'ADET' },
-    { type: 'UOM', source: 'KASA',  destination: 'NIU', description: 'KASA' },
-    { type: 'UOM', source: 'METRE', destination: 'MTR', description: 'METRE' },
-    { type: 'UOM', source: 'PAKET', destination: 'NIU', description: 'PAKET' },
+    { type: "EFat. Ödemek. Yöntem", source: "BANKA", destination: "42", description: "BANKA HAVALESİ" },
+    { type: "EFat. Ödemek. Yöntem", source: "NAKIT", destination: "42", description: "NAKIT ÖDEME" },
+    { type: "EFat. Ödemek. Yöntem", source: "PEŞİN", destination: "42", description: "PEŞİN" },
 
-    { type: 'EFat. Ödemek. Yöntem', source: 'BANKA', destination: '42', description: 'BANKA HAVALESİ' },
-    { type: 'EFat. Ödemek. Yöntem', source: 'NAKIT', destination: '42', description: 'NAKIT ÖDEME' },
-    { type: 'EFat. Ödemek. Yöntem', source: 'PEŞİN', destination: '42', description: 'PEŞİN' },
-
-    { type: 'EAR. İnternet Ödemesi. Yöntem', source: 'BANKA',      destination: 'EFT/HAVALE',            description: 'EFT/HAVALE' },
-    { type: 'EAR. İnternet Ödemesi. Yöntem', source: 'KREDİKARTI', destination: 'KREDIKARTI/BANKAKARTI', description: 'KREDİ KARTI' },
-    { type: 'EAR. İnternet Ödemesi. Yöntem', source: 'NAKIT',      destination: 'DIGER',                 description: 'NAKIT ÖDEME' },
-    { type: 'EAR. İnternet Ödemesi. Yöntem', source: 'PEŞİN',      destination: '42',                    description: 'PEŞİN' },
+    { type: "EAR. İnternet Ödemesi. Yöntem", source: "BANKA",      destination: "EFT/HAVALE",            description: "EFT/HAVALE" },
+    { type: "EAR. İnternet Ödemesi. Yöntem", source: "KREDİKARTI", destination: "KREDIKARTI/BANKAKARTI", description: "KREDİ KARTI" },
+    { type: "EAR. İnternet Ödemesi. Yöntem", source: "NAKIT",      destination: "DIGER",                 description: "NAKIT ÖDEME" },
+    { type: "EAR. İnternet Ödemesi. Yöntem", source: "PEŞİN",      destination: "42",                    description: "PEŞİN" },
   ];
 
   const grid = await getGrid(frame);
@@ -207,96 +147,59 @@ test('@smoke E-Fatura Kod Eşleme sayfası validasyonlar', async ({ page }) => {
       if (shot) {
         await test.info().attach(`missing-mapping-${exp.type}-${exp.source}.png`, {
           body: shot,
-          contentType: 'image/png',
+          contentType: "image/png",
         });
       }
 
       errors.push(
         [
-          '❌ Kod Eşleme Satırı Bulunamadı',
+          "❌ Kod Eşleme Satırı Bulunamadı",
           `Type        : ${exp.type}`,
           `Source      : ${exp.source}`,
           `Destination : ${exp.destination}`,
           `Description : ${exp.description}`,
-        ].join('\n')
+        ].join("\n")
       );
       continue;
     }
 
-    const rowTextN = norm(await row.innerText().catch(() => ''));
-    expect.soft(rowTextN).toContain(norm(exp.type));
-    expect.soft(rowTextN).toContain(norm(exp.source));
-    expect.soft(rowTextN).toContain(norm(exp.destination));
-    expect.soft(rowTextN).toContain(norm(exp.description));
+    const rowTextN = normalizeText(await row.innerText().catch(() => ""));
+    expect.soft(rowTextN).toContain(normalizeText(exp.type));
+    expect.soft(rowTextN).toContain(normalizeText(exp.source));
+    expect.soft(rowTextN).toContain(normalizeText(exp.destination));
+    expect.soft(rowTextN).toContain(normalizeText(exp.description));
   }
 
-  if (errors.length) throw new Error(errors.join('\n\n'));
+  if (errors.length) throw new Error(errors.join("\n\n"));
 });
 
 // ------------------------------
 // 3) VERGİ TÜRÜ KODLARI
 // ------------------------------
-test('@smoke E-Fatura Vergi Türü Kodları sayfası validasyonlar', async ({ page }) => {
+test("@smoke E-Fatura Vergi Türü Kodları sayfası validasyonlar", async ({ page }) => {
   test.setTimeout(8 * 60 * 1000);
 
-  await page.goto(BC_BASE_URL, { waitUntil: 'networkidle' });
-  const frame = page.frameLocator('iframe[title="undefined"]');
+  await page.goto(BC_BASE_URL, { waitUntil: "domcontentloaded" });
+  const frame = await getBCFrame(page);
 
-  await frame.getByRole('menuitem', { name: 'Pargesoft E-Fatura' }).click();
-  await expect(frame.getByRole('button', { name: 'Sabitle' })).toBeVisible();
-
-  await frame.getByRole('menuitem', { name: 'Kurulum' }).click();
-  await expect(frame.getByRole('menu', { name: 'Kurulum' })).toBeVisible();
-
-  await frame.getByRole('menuitem', { name: /E-Fatura Vergi Türü Kodu/i }).click();
+  await openEFaturaSetupMenu(frame);
+  await openMenuItem(frame, /E-Fatura Vergi Türü Kodu/i);
 
   await expect(frame.locator('[id^="page-caption"]'))
     .toContainText(/E-Fatura Vergi Türü/i);
 
   const expectedRows = [
-    { code: '0015', description: 'uuu', type: 'KDV', calcOrder: '0', rate: '20,00' },
-    { code: '8001', description: 'Borsa Tescil Ücreti', type: 'KDV', calcOrder: '0', rate: '0,00' },
-    { code: '8002', description: 'Enerji Fonu', type: 'KDV', calcOrder: '0', rate: '0,00' },
-    { code: '8004', description: 'Trt Payı', type: 'KDV', calcOrder: '0', rate: '0,00' },
-    { code: '8005', description: 'Elektrik Tüketim Vergisi', type: 'KDV', calcOrder: '0', rate: '0,00' },
-    { code: '8006', description: 'Telsiz Kullanım Ücreti', type: 'KDV', calcOrder: '0', rate: '0,00' },
-    { code: '8007', description: 'Telsiz Ruhsat Ücreti', type: 'KDV', calcOrder: '0', rate: '0,00' },
-    { code: '8008', description: 'Çevre Temizlik Vergisi', type: 'KDV', calcOrder: '0', rate: '0,00' },
+    { code: "0015", description: "uuu", type: "KDV",      calcOrder: "0", rate: "20,00" },
+    { code: "8001", description: "KDV Tevkifatı", type: "Tevkifat", calcOrder: "0", rate: "70,00" },
+    { code: "8002", description: "KDV Tevkifatı", type: "Tevkifat", calcOrder: "0", rate: "90,00" },
+    { code: "825",  description: "Demir-Çelik Ürünlerinin Teslimi", type: "Tevkifat", calcOrder: "0", rate: "100,00" },
 
-    { code: '801', description: 'Milli Piyango, Spor Toto vb. Oyunlar', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-    { code: '802', description: 'At Yarışları ve Diğer Müşterek Bahis ve Talih Oyunları', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-    { code: '803', description: 'Profesyonel Sanatçıların Yer Aldığı Gösteriler', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-    { code: '804', description: 'Gümrük Depolarında ve Müzayede Mahallerinde Yapılan Satışlar', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-    { code: '805', description: 'Altından Mamül veya Altın İçeren Ziynet Eşyaları', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-    { code: '806', description: 'Tütün Mamülleri', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-    { code: '807', description: 'Muzır Neşriyat Kapsamındaki Gazete, Dergi vb.', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-    { code: '808', description: 'Gümüşten Mamul veya Gümüş İçeren Ziynet Eşyaları', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-    { code: '809', description: 'Belediyeler Tarafından Yapılan Şehir', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-    { code: '810', description: 'Ön Ödemeli Elektronik Haberleşme Hizmetleri', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-    { code: '811', description: 'TŞOF Tarafından Araç Plakaları ile Sürücü Kurslarında Kullanılan Bir Kısım Evrakın Teslimi', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-    { code: '812', description: 'KDV Uygulanmadan Alınan İkinci El Motorlu Kara Taşıtı veya Taşınmaz Teslimi', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
-
-    { code: '813', description: 'Çevre ve Bahçe Bakım Hizmetleri', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '814', description: 'Servis Taşımacılığı Hizmeti', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '815', description: 'Her Türlü Baskı ve Basım Hizmetleri', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '816', description: 'Hurda Metalden Elde Edilen Külçe Teslimleri', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '817', description: 'Bakır, Çinko, Demir Çelik, Alüminyum ve Kurşun Külçe Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '818', description: 'Bakır, Çinko, Alüminyum ve Kurşun Ürünlerinin Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '819', description: 'İstisnadan Vazgeçenlerin Hurda ve Atık Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '820', description: 'Metal, Plastik, Lastik, Kauçuk, Kâğıt ve Cam Hurda ve Atıklardan Elde Edilen Hammadde Teslimi[KDVGUT-(I/C-2.1.3.3.4)]', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '821', description: 'Pamuk, Tiftik, Yün ve Yapağı İle Ham Post ve Deri Teslimleri', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '822', description: 'Ağaç ve Orman Ürünleri Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '823', description: 'Yük Taşımacılığı Hizmeti', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '824', description: 'Ticari Reklam Hizmetleri', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '825', description: 'Demir-Çelik Ürünlerinin Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-
-    { code: '9021', description: '4961 Banka Sigorta Muameleleri Vergisi', type: 'KDV', calcOrder: '0', rate: '0,00' },
-    { code: '9040', description: 'Mera Fonu', type: 'KDV', calcOrder: '0', rate: '0,00' },
-    { code: '9077', description: 'Motorlu Taşıt Araçlarına İlişkin Özel Tüketim Vergisi (Tescile Tabi Olanlar)', type: 'KDV', calcOrder: '0', rate: '0,00' },
+    { code: "9021", description: "4961 Banka Sigorta Muameleleri Vergisi", type: "KDV", calcOrder: "0", rate: "0,00" },
+    { code: "9040", description: "Mera Fonu", type: "KDV", calcOrder: "0", rate: "0,00" },
+    { code: "9077", description: "Motorlu Taşıt Araçlarına İlişkin Özel Tüketim Vergisi (Tescile Tabi Olanlar)", type: "KDV", calcOrder: "0", rate: "0,00" },
   ];
 
-
-  const SEARCH_SCROLLS = 35; 
+  const SEARCH_SCROLLS = 35;
   const SEARCH_WAIT_MS = 60;
 
   const grid = await getGrid(frame);
@@ -318,30 +221,30 @@ test('@smoke E-Fatura Vergi Türü Kodları sayfası validasyonlar', async ({ pa
       if (shot) {
         await test.info().attach(`missing-taxtype-${exp.code}.png`, {
           body: shot,
-          contentType: 'image/png',
+          contentType: "image/png",
         });
       }
 
       errors.push(
         [
-          '❌ Vergi Türü Kodu satırı bulunamadı',
+          "❌ Vergi Türü Kodu satırı bulunamadı",
           `Code       : ${exp.code}`,
           `Desc       : ${exp.description}`,
           `Type       : ${exp.type}`,
           `CalcOrder  : ${exp.calcOrder}`,
           `Rate       : ${exp.rate}`,
-        ].join('\n')
+        ].join("\n")
       );
       continue;
     }
 
-    const rowTextN = norm(await row.innerText().catch(() => ''));
-    expect.soft(rowTextN).toContain(norm(exp.code));
-    expect.soft(rowTextN).toContain(norm(exp.description));
-    expect.soft(rowTextN).toContain(norm(exp.type));
-    expect.soft(rowTextN).toContain(norm(exp.calcOrder));
-    expect.soft(rowTextN).toContain(norm(exp.rate));
+    const rowTextN = normalizeText(await row.innerText().catch(() => ""));
+    expect.soft(rowTextN).toContain(normalizeText(exp.code));
+    expect.soft(rowTextN).toContain(normalizeText(exp.description));
+    expect.soft(rowTextN).toContain(normalizeText(exp.type));
+    expect.soft(rowTextN).toContain(normalizeText(exp.calcOrder));
+    expect.soft(rowTextN).toContain(normalizeText(exp.rate));
   }
 
-  if (errors.length) throw new Error(errors.join('\n\n'));
+  if (errors.length) throw new Error(errors.join("\n\n"));
 });
