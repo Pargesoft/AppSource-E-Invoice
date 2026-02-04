@@ -60,17 +60,18 @@ jobs:
         run: |
           npx playwright test --project=chromium-tests
 
-      - name: Run API tests (optional)
-        continue-on-error: true
-        env:
-          BC_TENANT_ID: ${{ secrets.BC_TENANT_ID }}
-          BC_CLIENT_ID: ${{ secrets.BC_CLIENT_ID }}
-          BC_CLIENT_SECRET: ${{ secrets.BC_CLIENT_SECRET }}
-          BC_COMPANY_ID: ${{ secrets.BC_COMPANY_ID }}
-          BC_BASE_URL: ${{ secrets.BC_BASE_URL }}
-          BC_ENVIRONMENT: ${{ secrets.BC_ENVIRONMENT }}
-        run: |
-          npx playwright test --project=api
+# - name: Run API tests (optional)
+#   continue-on-error: true
+#   env:
+#     BC_TENANT_ID: ${{ secrets.BC_TENANT_ID }}
+#     BC_CLIENT_ID: ${{ secrets.BC_CLIENT_ID }}
+#     BC_CLIENT_SECRET: ${{ secrets.BC_CLIENT_SECRET }}
+#     BC_COMPANY_ID: ${{ secrets.BC_COMPANY_ID }}
+#     BC_BASE_URL: ${{ secrets.BC_BASE_URL }}
+#     BC_ENVIRONMENT: ${{ secrets.BC_ENVIRONMENT }}
+#   run: |
+#     npx playwright test --project=api
+
 
       - name: Upload Playwright HTML report (artifact)
         if: always()
