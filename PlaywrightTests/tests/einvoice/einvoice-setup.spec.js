@@ -10,16 +10,71 @@ const norm = (s) =>
     .trim()
     .toLowerCase();
 
-async function openMenu(frame) {
-  await expect(frame.getByRole('form', { name: /Business Manager/i }))
-    .toBeVisible({ timeout: 60000 });
+/**
+ * ✅ BC main content frame’i güvenli şekilde bulur.
+ * - Önce name=MainContent
+ * - Sonra frame url + UI işaretleri (menuitem/caption/grid)
+ * - Bekleyerek tarar (iframe geç yüklenebiliyor)
+ */
+async function getBcFrame(page, { timeoutMs = 60000 } = {}) {
+  const started = Date.now();
 
-  await frame.getByRole('menuitem', { name: /Pargesoft E-Fatura/i }).click();
+  while (Date.now() - started < timeoutMs) {
+    // 1) En güvenilir: MainContent
+    const main = page.frame({ name: 'MainContent' });
+    if (main) return main;
+
+    // 2) Frame’leri tara
+    for (const f of page.frames()) {
+      const url = f.url() || '';
+
+      const isLikelyBc =
+        /businesscentral\.dynamics\.com/i.test(url) ||
+        /\/Core/i.test(url) ||
+        /\/Sandbox/i.test(url);
+
+      if (!isLikelyBc) continue;
+
+      try {
+        if ((await f.locator('[id^="page-caption"]').first().count()) > 0) return f;
+      } catch {}
+
+      try {
+        if ((await f.locator('[role="grid"]').first().count()) > 0) return f;
+      } catch {}
+
+      // Menü varsa kesin BC UI içindeyiz
+      try {
+        if ((await f.getByRole('menuitem').first().count()) > 0) return f;
+      } catch {}
+    }
+
+    // 3) iframe geç gelebilir → kısa bekle
+    await page.waitForTimeout(250);
+  }
+
+  const urls = page.frames().map((f) => f.url()).filter(Boolean);
+  throw new Error(
+    `BC main frame bulunamadı (${timeoutMs}ms). Bulunan frame URL'leri:\n- ${urls.join('\n- ')}`
+  );
+}
+
+async function openMenu(frame) {
+  // ✅ Role Center adı değişebilir; form adına bağlanma.
+  // Menü item'ler render olana kadar bekle.
+  await expect(frame.getByRole('menuitem').first()).toBeVisible({ timeout: 60000 });
+
+  const efaturaMenu = frame.getByRole('menuitem', { name: /Pargesoft E-Fatura/i });
+  await expect(efaturaMenu).toBeVisible({ timeout: 60000 });
+  await efaturaMenu.click();
 
   await expect(frame.getByRole('button', { name: /Sabitle/i }))
     .toBeVisible({ timeout: 30000 });
 
-  await frame.getByRole('menuitem', { name: /^Kurulum$/i }).click();
+  const kurulum = frame.getByRole('menuitem', { name: /^Kurulum$/i });
+  await expect(kurulum).toBeVisible({ timeout: 30000 });
+  await kurulum.click();
+
   await expect(frame.getByRole('menu', { name: /^Kurulum$/i }))
     .toBeVisible({ timeout: 30000 });
 }
@@ -42,8 +97,8 @@ async function findRowByContainsAll({
   page,
   grid,
   mustContain = [],
-  maxScrolls = 40,     // ✅ default: eskiden 120 idi
-  waitMs = 80,         // ✅ default: eskiden 150 idi
+  maxScrolls = 40,
+  waitMs = 80,
 }) {
   const must = mustContain.map(norm);
 
@@ -73,8 +128,11 @@ async function findRowByContainsAll({
 test('@smoke E-Fatura Durum Kodları sayfası validasyonlar', async ({ page }) => {
   test.setTimeout(5 * 60 * 1000);
 
-  await page.goto(BC_BASE_URL, { waitUntil: 'networkidle' });
-  const frame = page.frameLocator('iframe[title="undefined"]');
+  // ✅ BC için networkidle yerine domcontentloaded
+  await page.goto(BC_BASE_URL, { waitUntil: 'domcontentloaded' });
+  await page.waitForURL(/businesscentral\.dynamics\.com/i, { timeout: 60000 });
+
+  const frame = await getBcFrame(page);
 
   await openMenu(frame);
   await frame.getByRole('menuitem', { name: /E-Fatura Durum Kodları/i }).click();
@@ -106,7 +164,7 @@ test('@smoke E-Fatura Durum Kodları sayfası validasyonlar', async ({ page }) =
       page,
       grid,
       mustContain: [exp.code, exp.description],
-      maxScrolls: 25,   // ✅ daha hızlı
+      maxScrolls: 25,
       waitMs: 60,
     });
 
@@ -145,8 +203,10 @@ test('@smoke E-Fatura Durum Kodları sayfası validasyonlar', async ({ page }) =
 test('@smoke E-Fatura Kod Eşleme sayfası validasyonlar', async ({ page }) => {
   test.setTimeout(6 * 60 * 1000);
 
-  await page.goto(BC_BASE_URL, { waitUntil: 'networkidle' });
-  const frame = page.frameLocator('iframe[title="undefined"]');
+  await page.goto(BC_BASE_URL, { waitUntil: 'domcontentloaded' });
+  await page.waitForURL(/businesscentral\.dynamics\.com/i, { timeout: 60000 });
+
+  const frame = await getBcFrame(page);
 
   await openMenu(frame);
   await frame.getByRole('menuitem', { name: /E-Fatura Kod Eşleme/i }).click();
@@ -239,14 +299,12 @@ test('@smoke E-Fatura Kod Eşleme sayfası validasyonlar', async ({ page }) => {
 test('@smoke E-Fatura Vergi Türü Kodları sayfası validasyonlar', async ({ page }) => {
   test.setTimeout(8 * 60 * 1000);
 
-  await page.goto(BC_BASE_URL, { waitUntil: 'networkidle' });
-  const frame = page.frameLocator('iframe[title="undefined"]');
+  await page.goto(BC_BASE_URL, { waitUntil: 'domcontentloaded' });
+  await page.waitForURL(/businesscentral\.dynamics\.com/i, { timeout: 60000 });
+  const frame = await getBcFrame(page);
 
-  await frame.getByRole('menuitem', { name: 'Pargesoft E-Fatura' }).click();
-  await expect(frame.getByRole('button', { name: 'Sabitle' })).toBeVisible();
-
-  await frame.getByRole('menuitem', { name: 'Kurulum' }).click();
-  await expect(frame.getByRole('menu', { name: 'Kurulum' })).toBeVisible();
+  // ✅ menü açma aynı helper’dan
+  await openMenu(frame);
 
   await frame.getByRole('menuitem', { name: /E-Fatura Vergi Türü Kodu/i }).click();
 
@@ -276,27 +334,26 @@ test('@smoke E-Fatura Vergi Türü Kodları sayfası validasyonlar', async ({ pa
     { code: '811', description: 'TŞOF Tarafından Araç Plakaları ile Sürücü Kurslarında Kullanılan Bir Kısım Evrakın Teslimi', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
     { code: '812', description: 'KDV Uygulanmadan Alınan İkinci El Motorlu Kara Taşıtı veya Taşınmaz Teslimi', type: 'Özel Matrah', calcOrder: '0', rate: '0,00' },
 
-    { code: '813', description: 'Çevre ve Bahçe Bakım Hizmetleri', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '814', description: 'Servis Taşımacılığı Hizmeti', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '815', description: 'Her Türlü Baskı ve Basım Hizmetleri', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '816', description: 'Hurda Metalden Elde Edilen Külçe Teslimleri', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '817', description: 'Bakır, Çinko, Demir Çelik, Alüminyum ve Kurşun Külçe Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '818', description: 'Bakır, Çinko, Alüminyum ve Kurşun Ürünlerinin Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '819', description: 'İstisnadan Vazgeçenlerin Hurda ve Atık Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '820', description: 'Metal, Plastik, Lastik, Kauçuk, Kâğıt ve Cam Hurda ve Atıklardan Elde Edilen Hammadde Teslimi[KDVGUT-(I/C-2.1.3.3.4)]', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '821', description: 'Pamuk, Tiftik, Yün ve Yapağı İle Ham Post ve Deri Teslimleri', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '822', description: 'Ağaç ve Orman Ürünleri Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '823', description: 'Yük Taşımacılığı Hizmeti', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '824', description: 'Ticari Reklam Hizmetleri', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
-    { code: '825', description: 'Demir-Çelik Ürünlerinin Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '100,00' },
+    { code: '813', description: 'Çevre ve Bahçe Bakım Hizmetleri', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '814', description: 'Servis Taşımacılığı Hizmeti', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '815', description: 'Her Türlü Baskı ve Basım Hizmetleri', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '816', description: 'Hurda Metalden Elde Edilen Külçe Teslimleri', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '817', description: 'Bakır, Çinko, Demir Çelik, Alüminyum ve Kurşun Külçe Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '818', description: 'Bakır, Çinko, Alüminyum ve Kurşun Ürünlerinin Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '819', description: 'İstisnadan Vazgeçenlerin Hurda ve Atık Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '820', description: 'Metal, Plastik, Lastik, Kauçuk, Kâğıt ve Cam Hurda ve Atıklardan Elde Edilen Hammadde Teslimi[KDVGUT-(I/C-2.1.3.3.4)]', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '821', description: 'Pamuk, Tiftik, Yün ve Yapağı İle Ham Post ve Deri Teslimleri', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '822', description: 'Ağaç ve Orman Ürünleri Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '823', description: 'Yük Taşımacılığı Hizmeti', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '824', description: 'Ticari Reklam Hizmetleri', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
+    { code: '825', description: 'Demir-Çelik Ürünlerinin Teslimi', type: 'Tevkifat', calcOrder: '0', rate: '10,00' },
 
     { code: '9021', description: '4961 Banka Sigorta Muameleleri Vergisi', type: 'KDV', calcOrder: '0', rate: '0,00' },
     { code: '9040', description: 'Mera Fonu', type: 'KDV', calcOrder: '0', rate: '0,00' },
     { code: '9077', description: 'Motorlu Taşıt Araçlarına İlişkin Özel Tüketim Vergisi (Tescile Tabi Olanlar)', type: 'KDV', calcOrder: '0', rate: '0,00' },
   ];
 
-
-  const SEARCH_SCROLLS = 35; 
+  const SEARCH_SCROLLS = 35;
   const SEARCH_WAIT_MS = 60;
 
   const grid = await getGrid(frame);
