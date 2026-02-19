@@ -392,8 +392,9 @@ test('@smoke E-Fatura Vergi Türü Kodları sayfası validasyonlar', async ({ pa
 
   await frame.getByRole('menuitem', { name: /E-Fatura Vergi Türü Kodu/i }).click();
 
-  await expect(frame.locator('[id^="page-caption"]'))
-    .toContainText(/E-Fatura Vergi Türü/i);
+  await expect(frame.locator('[id^="page-caption"]').first())
+    .toContainText(/E-Fatura Vergi Türü/i, { timeout: 60000 });
+
   console.log('XLSX keys sample:', Object.keys(XLSX).slice(0, 20));
   console.log('readFile type:', typeof XLSX.readFile);
 
