@@ -13,7 +13,7 @@ import {
   queryOutgoingEInvoiceStatusAndExpectApproved,
 } from "../../utils/bc/ui/einvoice-outgoing.ui.js";
 
-test("UI | Create Sales Invoice (reusable method)", async ({ page }) => {
+test("@smoke E-Fatura Giden Fatura Oluşturma E-Arşiv", async ({ page }) => {
   test.setTimeout(6 * 60 * 1000);
 
   await page.goto(BC_BASE_URL, { waitUntil: "domcontentloaded" });
