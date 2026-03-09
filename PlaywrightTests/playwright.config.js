@@ -7,7 +7,7 @@ export default defineConfig({
   // HTML report’u her koşulda üret
   reporter: [
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
-    ['allure-playwright', { outputFolder: 'allure-results' }],
+  
     ['list'],
   ],
 
