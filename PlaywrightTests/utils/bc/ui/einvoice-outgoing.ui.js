@@ -321,31 +321,31 @@ await waitAndAcceptInfoOkFast(page, frame, /Fatura entegratöre gönderildi/i, {
 
 }
 
-export async function queryOutgoingEInvoiceStatusAndExpectApproved(page) {
+export async function queryOutgoingEInvoiceStatusAndExpectApproved(
+  page,
+  { expectedDocType = "E-Fatura" } = {}
+) {
   let lastStatus = "";
+  let lastDocType = "";
 
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
     const frame = await getBcFrame(page);
     await expectRoleCenterReady(frame, { timeoutMs: 60000 });
 
     const gonderim = frame.getByRole("menuitem", { name: "Gönderim" }).first();
     const sabitle = frame.getByRole("button", { name: "Sabitle" }).first();
 
-    // ✅ Gönderim menüsünü gerçekten açmayı garanti et (en kritik kısım)
     let menuOpened = false;
     for (let i = 0; i < 3; i++) {
-      // normal click bazen boşa gidiyor -> DOM click ile destekle
       try {
         await gonderim.click({ force: true, timeout: 5000 });
       } catch {}
 
-      // kısa sürede Sabitle görünürse menü açılmıştır
       if (await sabitle.isVisible().catch(() => false)) {
         menuOpened = true;
         break;
       }
 
-      // fallback: DOM click (pointer/intercept bypass)
       try {
         await gonderim.evaluate((el) => el.click());
       } catch {}
@@ -362,36 +362,50 @@ export async function queryOutgoingEInvoiceStatusAndExpectApproved(page) {
       throw new Error('Gönderim menüsü açılamadı (Sabitle görünmedi).');
     }
 
-    // ✅ Durum Sorgula butonu (senin çalışan xpath’in)
     const durumBtn = frame.locator(
-      `xpath=//*[starts-with(@id,'commandBarItemButton') and (` +
-        `contains(@aria-label,'Durum Sorgula') or .//text()[contains(normalize-space(.),'Durum Sorgula')]` +
-      `)]`
+      `xpath=//*[starts-with(@id,'commandBarItemButton') and (
+        contains(@aria-label,'Durum Sorgula') 
+        or .//text()[contains(normalize-space(.),'Durum Sorgula')]
+      )]`
     ).first();
 
     await expect(durumBtn).toBeVisible({ timeout: 60000 });
     await expect(durumBtn).toBeEnabled({ timeout: 60000 });
 
-    // ✅ Click (DOM click)
     await durumBtn.evaluate((el) => el.click());
 
-    // ✅ 10 sn bekle
-    await page.waitForTimeout(10_000);
+    await page.waitForTimeout(10000);
 
-    // ✅ Status oku (senin istediğin hücre)
     const statusCell = frame.locator(
       `xpath=//caption[text()='PRG_E-Invoice Outgoing Queue']/parent::table//tbody//tr[1]/td[6]`
     ).first();
 
+    const docTypeCell = frame.locator(
+      `xpath=//caption[text()='PRG_E-Invoice Outgoing Queue']/parent::table//tbody//tr[1]/td[5]`
+    ).first();
+
     lastStatus = (await statusCell.innerText().catch(() => "")).trim();
+    lastDocType = (await docTypeCell.innerText().catch(() => "")).trim();
+
     console.log(`Attempt ${attempt} status:`, lastStatus);
+    console.log(`Attempt ${attempt} docType:`, lastDocType);
 
-    if (lastStatus.includes("Onaylandı")) return;
+    if (
+      lastStatus.includes("Onaylandı") &&
+      lastDocType.includes(expectedDocType)
+    ) {
+      return;
+    }
 
-    // ikinci denemeye geçilecekse devam et
+    if (attempt === 2) {
+      console.log("⏳ 3. denemeden önce 2 dakika bekleniyor...");
+      await page.waitForTimeout(120000);
+    }
   }
 
-  throw new Error(`Durum "Onaylandı" olmadı. Son görülen durum: "${lastStatus || "(boş)"}"`);
+  throw new Error(
+    `Durum "Onaylandı" ve belge tipi "${expectedDocType}" olmadı. Son status: "${lastStatus}", Tip: "${lastDocType}"`
+  );
 }
 
 
